@@ -89,8 +89,8 @@ public class CQLRowReader {
 				
 		       .setMaxConnectionsPerHost(HostDistance.LOCAL, getIntProperty("driver.maxconlocal"))
 		       .setMaxConnectionsPerHost(HostDistance.REMOTE, getIntProperty("driver.maxconremote"))
-		       .setMaxSimultaneousRequestsPerConnectionTreshold(HostDistance.LOCAL, getIntProperty("driver.simreq_conlocal"))
-		       .setMaxSimultaneousRequestsPerConnectionTreshold(HostDistance.REMOTE, getIntProperty("driver.simreq_conremote"));
+		       .setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, getIntProperty("driver.simreq_conlocal"))
+		       .setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, getIntProperty("driver.simreq_conremote"));
 		// configure connection options
 		cluster.getConfiguration().getSocketOptions()
 		       //.setConnectTimeoutMillis(Integer.MAX_VALUE)
