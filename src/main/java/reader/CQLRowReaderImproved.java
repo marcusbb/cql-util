@@ -32,9 +32,13 @@ public class CQLRowReaderImproved {
 	 */
 	public static void main(String[] args) throws Exception {
 		
+		//simple properties - room for expansion here
+		
 		properties = new Properties();
 		
 		properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("app.properties"));
+		
+		
 		
 		CQLRowReaderImproved reader = new CQLRowReaderImproved();
 		
@@ -42,16 +46,27 @@ public class CQLRowReaderImproved {
 		reader.cluster = reader.createCluster();
 		reader.session = reader.cluster.connect("icrs");
 		boolean more = true;
-		String startId = "0";
+		
+		//start at the beginning of the token range.
 		Long token = Long.MIN_VALUE;
+		
+		//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
 		int pageSize = 13;
+		
 		long count = 0;
+		
+		//simple container to keep track of all of items in the 
+		//last fetch
+		//Areas of improvement to the algorithm are possible, without having
+		//to waste more memory
+		//it's compared to a current page count to exclude duplicates from previous
+		//query
 		HashSet<String> lastIdSet = new HashSet<String>(pageSize);
 		
 		while (more) {
 			
 			//SimpleStatement ss = new SimpleStatement("select id,token(id) from devices where token(id) > token('" + startToken + "') limit " +pageSize);
-			System.out.println("StartToken: " + token + " startId " +startId);
+			//System.out.println("StartToken: " + token + " startId " +startId);
 			SimpleStatement ss = new SimpleStatement("select id,name,token(id) from devices where token(id) >= " + token + " limit " +pageSize);
 			ResultSet rs = reader.session.execute(ss);
 
@@ -61,7 +76,7 @@ public class CQLRowReaderImproved {
 			//bail on empty result set
 			if (!iter.hasNext())
 				break;
-			
+			//hold the last row id (composite key)
 			String lastId = null;
 			
 			Row row = null;
@@ -71,6 +86,7 @@ public class CQLRowReaderImproved {
 			while (iter.hasNext()) {
 				curRowCount++;
 				row = iter.next();
+				//form the key
 				lastId = row.getString(0)+":"+row.getString(1);
 				//System.out.println("lastId: " + lastId);
 				curIdSet.add(lastId);
@@ -90,11 +106,11 @@ public class CQLRowReaderImproved {
 				token++;
 				//break;
 			}
-			startId = lastId;
+			
 			//didn't read any new id's, move on to next token
 			
 			
-			System.out.println("Count: " + count + " start: " + startId + " token: " + token);
+			System.out.println("Count: " + count + " token: " + token);
 		}
 		
 		
