@@ -50,10 +50,13 @@ public class CQLRowReaderImproved {
 		//start at the beginning of the token range.
 		Long token = Long.MIN_VALUE;
 		
+		//and MUST be larger than any column family row
 		//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
 		int pageSize = 13;
 		
+		//CQL Row count
 		long count = 0;
+		
 		
 		//simple container to keep track of all of items in the 
 		//last fetch
@@ -67,7 +70,10 @@ public class CQLRowReaderImproved {
 			
 			//SimpleStatement ss = new SimpleStatement("select id,token(id) from devices where token(id) > token('" + startToken + "') limit " +pageSize);
 			//System.out.println("StartToken: " + token + " startId " +startId);
+			//future: have configurable columns of the primary key.
+			//need the type as well
 			SimpleStatement ss = new SimpleStatement("select id,name,token(id) from devices where token(id) >= " + token + " limit " +pageSize);
+			
 			ResultSet rs = reader.session.execute(ss);
 
 
@@ -86,7 +92,7 @@ public class CQLRowReaderImproved {
 			while (iter.hasNext()) {
 				curRowCount++;
 				row = iter.next();
-				//form the key
+				//TODO: make this a composite value
 				lastId = row.getString(0)+":"+row.getString(1);
 				//System.out.println("lastId: " + lastId);
 				curIdSet.add(lastId);
@@ -106,9 +112,6 @@ public class CQLRowReaderImproved {
 				token++;
 				//break;
 			}
-			
-			//didn't read any new id's, move on to next token
-			
 			
 			System.out.println("Count: " + count + " token: " + token);
 		}
