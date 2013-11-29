@@ -18,6 +18,7 @@ INSERTED AS A CONVENIENCE UNTIL THE DRIVER 2.0 IS BROUGHT ONLINE
  * A simple {@code RegularStatement} implementation built directly from a query
  * string.
  */
+@Deprecated
 public class SimpleStatement extends RegularStatement {
 
     private final String query;

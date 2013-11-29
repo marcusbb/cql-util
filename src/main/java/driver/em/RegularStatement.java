@@ -1,7 +1,11 @@
 package driver.em;
 
 import java.nio.ByteBuffer;
-
+///////////////////////////////////////////////////////
+/*
+INSERTED AS A CONVENIENCE UNTIL THE DRIVER 2.0 IS BROUGHT ONLINE
+*/
+///////////////////////////////////////////////////////
 /**
  * A regular (non-prepared and non batched) CQL statement.
  * <p>
@@ -10,6 +14,7 @@ import java.nio.ByteBuffer;
  * is provided as a simple implementation to build a {@code RegularStatement} directly
  * from its query string.
  */
+@Deprecated
 public abstract class RegularStatement extends Statement {
 
     /**
