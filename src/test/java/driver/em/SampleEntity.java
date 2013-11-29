@@ -1,5 +1,7 @@
 package driver.em;
 
+import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -26,11 +28,17 @@ public class SampleEntity {
 	@Column(name="col1")
 	public String simpleCol;
 	
-	//@Column(name="properties")
+	@Column(name="properties")
 	public Map<String, String> properties;
 	
 	@Column(name="col2")
 	public Long ts;
+	
+	@Column(name="date_col")
+	public Date date;
+	
+	@Column(name="b_info")
+	public ByteBuffer blob;
 	
 	public String getSimpleCol() {
 		return simpleCol;

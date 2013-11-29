@@ -2,6 +2,11 @@ package driver.em;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.apache.cassandra.utils.ByteBufferUtil;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.DataType;
@@ -27,7 +32,8 @@ public class SimpleStatement extends RegularStatement {
     
     private volatile ByteBuffer routingKey;
     private volatile String keyspace;
-
+    private final static String dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ";
+    private static DateFormat df = new SimpleDateFormat(dateFormat);
     /**
      * Creates a new {@code SimpleStatement} with the provided query string (and no values).
      *
@@ -260,7 +266,15 @@ public class SimpleStatement extends RegularStatement {
     			if (objValues[count] instanceof String)
     				builder.append("'").append(objValues[count]).append("'");
     			else if (objValues[count] instanceof ByteBuffer)
-    				throw new UnsupportedOperationException("byte[] or byte buffer not supported yet");
+    				builder.append(Bytes.toHexString(values[count]));
+    				//builder.append("0x")
+                	//.append(ByteBufferUtil.bytesToHex((ByteBuffer)values[count]))
+    				
+    			else if (objValues[count] instanceof Date) {
+    				builder.append("'").append(
+    						df.format((Date)objValues[count])
+    						).append("'");
+    			}
     			else
     				builder.append(objValues[count]);
     			count++;
