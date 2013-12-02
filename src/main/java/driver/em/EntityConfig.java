@@ -16,7 +16,7 @@ import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ColumnDefinitions.Definition;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Row;
-
+import com.datastax.driver.core.SimpleStatement;
 import static driver.em.CharConst.*;
 /**
  * A data structure for holding entity configuration related to serializing to and from the 

@@ -12,12 +12,12 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
 
-
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-
+import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.RetryPolicy;
 
@@ -79,7 +79,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			//build and execute the statement
 			SimpleStatement ss = getUpdateStatement(entity);
 			setRouting(ss, getIdValue(entity));
-			getSession().execute( ss.buildQueryString() );
+			getSession().execute( ss );
 			
 		}
 		else {
@@ -97,7 +97,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			//build and execute the statement
 			SimpleStatement ss = entityConfig.getDelStatement(key);
 			setRouting(ss, key);
-			getSession().execute( ss.buildQueryString() );
+			getSession().execute( ss );
 			
 		}
 		else {
@@ -117,7 +117,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			SimpleStatement ss = entityConfig.getAllQuery(key);
 			setRouting(ss, key);
 			ResultSet result = getSession().execute(
-				ss.buildQueryString()
+				ss
 			);
 			Iterator<Row> resultIter = result.iterator();
 			
@@ -143,7 +143,11 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	}
 
 
-	
+	@Override
+	public void executeBatch(BatchStatement bs) {
+		// TODO Auto-generated method stub
+		
+	}
 	
 	/*
 	 * 
@@ -163,7 +167,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		ArrayList<E> list = new ArrayList<>();
 		SimpleStatement ss = new SimpleStatement(query,values);
 		
-		ResultSet result = session.execute(ss.buildQueryString());
+		ResultSet result = session.execute(ss);
 		
 		Iterator<Row> resultIter = result.iterator();
 		

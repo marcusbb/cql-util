@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
@@ -84,7 +84,12 @@ public class CUtils {
 		map.put(ReqConstants.CONSISTENCY.toString(), level);
 		return map;
 	}
-	
+	public static Map<String,Object> getDefParamsWithConsistency(ConsistencyLevel level,BatchStatement batch) {
+		HashMap<String, Object> map = new HashMap<>(defParms);
+		map.put(ReqConstants.CONSISTENCY.toString(), level);
+		map.put(ReqConstants.BATCH.toString(), batch);
+		return map;
+	}
 	
 	public static Cluster createCluster(CassConfig context){
 		//pooling options

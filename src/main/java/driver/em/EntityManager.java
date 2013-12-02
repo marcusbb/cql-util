@@ -3,6 +3,7 @@ package driver.em;
 import java.util.Collection;
 import java.util.Map;
 
+import com.datastax.driver.core.BatchStatement;
 
 
 
@@ -63,7 +64,7 @@ public interface EntityManager<K, E>{
 	 */
 	Collection<E> findBy(String query, Object[] values,Map<String, Object> requestParameters);
 	
-	//void executeBatch(BatchStatement bs);
+	void executeBatch(BatchStatement bs);
 	
 	
 }

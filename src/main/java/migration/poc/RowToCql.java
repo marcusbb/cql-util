@@ -1,6 +1,9 @@
 package migration.poc;
 
-import static driver.em.CharConst.*;
+import static driver.em.CharConst.and;
+import static driver.em.CharConst.comma;
+import static driver.em.CharConst.eqParam;
+import static driver.em.CharConst.space;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.datastax.driver.core.DataType;
-import driver.em.SimpleStatement;
+import com.datastax.driver.core.SimpleStatement;
 
 public class RowToCql {
 

@@ -31,19 +31,12 @@ import java.nio.charset.CharsetEncoder;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.exceptions.InvalidTypeException;
 
+import com.datastax.driver.core.utils.Bytes;
 
 abstract class TypeCodec<T> {
 
@@ -292,7 +285,6 @@ abstract class TypeCodec<T> {
         }
     }
 
-   
     static class BytesCodec extends TypeCodec<ByteBuffer> {
 
         public static final BytesCodec instance = new BytesCodec();
@@ -302,7 +294,6 @@ abstract class TypeCodec<T> {
         @Override
         public ByteBuffer parse(String value) {
             return Bytes.fromHexString(value);
-        	
         }
 
         @Override
@@ -501,8 +492,7 @@ abstract class TypeCodec<T> {
         @Override
         public InetAddress deserialize(ByteBuffer bytes) {
             try {
-                return InetAddress.getByAddress(null);
-            	//return null;
+                return InetAddress.getByAddress(Bytes.getArray(bytes));
             } catch (UnknownHostException e) {
                 throw new InvalidTypeException("Invalid bytes for inet value, got " + bytes.remaining() + " bytes");
             }
@@ -694,7 +684,7 @@ abstract class TypeCodec<T> {
 
         @Override
         public BigInteger deserialize(ByteBuffer bytes) {
-            return new BigInteger(bytes.array());
+            return new BigInteger(Bytes.getArray(bytes));
         }
     }
 

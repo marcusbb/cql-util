@@ -59,7 +59,7 @@ public class RSExecutor {
 				
 				for (RowToCql row: operationStatements) {
 					session.execute(
-							row.getStatement().buildQueryString()
+							row.getStatement()
 							);
 				}
 				
