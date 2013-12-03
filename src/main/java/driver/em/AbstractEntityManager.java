@@ -17,7 +17,6 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.RetryPolicy;
 
@@ -269,6 +268,10 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	protected SimpleStatement getUpdateStatement(E obj )  {
 		
 		EntityConfig<E> ec = this.entityConfig;
+		//Update is not supported in a value-less table, only insert is
+		if (ec.colsToFields.isEmpty())
+			return getInsertStatement(obj);
+		
 		StringBuilder builder = new StringBuilder("UPDATE ").append(ec.tableName).append(" SET ");
 		ArrayList<Object> valueList = new ArrayList<>();
 		int i = 0;
@@ -311,7 +314,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		if (ec.embedded != null) {
 			try {
 				//this needs some improvement to the embedded class
-				Object idObj = ec.embedded.field.get(obj);
+				Object idObj = ec.embedded.get(obj);
 				for (ColumnMapping membed:ec.embedded.columns) {
 					valueList.add(membed.get(idObj) );
 				}
@@ -329,7 +332,43 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		//System.out.println("update ss : " + ss.getQueryString());
 		return ss;
 	}
-	
+	/**
+	 * currently only builds inserts for value-less tables (with only ids)
+	 * @param obj
+	 * @return
+	 */
+	protected SimpleStatement getInsertStatement(E obj)  {
+		EntityConfig<E> ec = this.entityConfig;
+		
+		ArrayList<Object> valueList = new ArrayList<>();
+		StringBuilder builder = new StringBuilder("INSERT INTO ").append(ec.tableName).append(" ( ");
+		
+		Embedded embedded = ec.embedded;
+		if (embedded == null) {
+			builder.append(ec.idMapping.name);
+			valueList.add(ec.idMapping.get(obj));
+		}else {
+			int i = 0;
+			Object idObj = ec.embedded.get(obj);
+			for (ColumnMapping mapping:embedded.columns) {
+				builder.append(mapping.name );
+				if (i < embedded.columns.length-1)
+					builder.append(", ");
+				i++;
+				valueList.add(mapping.get(idObj));
+			}
+		}
+		builder.append(") VALUES ( ");
+		for (int i=0;i<valueList.size();i++) {
+			builder.append("?");
+			if (i < valueList.size()-1)
+				builder.append(", ");
+		}
+		builder.append(" ) ");
+		SimpleStatement ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		
+		return ss;
+	}
 	public Session getSession() {
 		return session;
 	}
