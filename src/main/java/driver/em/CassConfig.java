@@ -1,13 +1,18 @@
 package driver.em;
 
+import java.io.Serializable;
+
 
 /**
  * 
  * Most configuration should do with reasonable defaults OR not set at all.
  * 
  */
-public class CassConfig {
+public class CassConfig implements Serializable {
 
+	
+	
+	private static final long serialVersionUID = 4764982374610680602L;
 	
 	//Some reasonable testing defaults are supplied, tune for production
 	String [] contactHostsName = {"localhost","127.0.0.1"};
