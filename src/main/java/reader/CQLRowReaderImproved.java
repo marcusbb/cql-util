@@ -27,8 +27,6 @@ public class CQLRowReaderImproved {
 	private Session session;
 	
 	
-	static Properties properties = null;
-	
 	ReaderConfig config;
 	
 	/**
@@ -36,11 +34,6 @@ public class CQLRowReaderImproved {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		//simple properties - room for expansion here
-		
-		properties = new Properties();
-		
-		properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("app.properties"));
 		
 				
 		CQLRowReaderImproved reader = new CQLRowReaderImproved();
@@ -54,6 +47,7 @@ public class CQLRowReaderImproved {
 		reader.cluster = CUtils.createCluster(new CassConfig());
 		reader.session = reader.cluster.connect("icrs");
 		
+		//for exception safety below
 		Class.forName( reader.config.getReaderTask() ).newInstance();
 		
 		reader.read();
