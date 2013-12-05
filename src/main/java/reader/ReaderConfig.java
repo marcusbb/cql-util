@@ -17,7 +17,13 @@ public class ReaderConfig {
 	
 	private String []otherCols;
 	
+	//and MUST be larger than any column family row
+	//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
 	private int pageSize = 1000;
+	
+	private Long startToken = Long.MIN_VALUE;
+	
+	private Long endToken = Long.MAX_VALUE;
 	
 	private String readerTask = RowCountTask.class.getName();
 	
@@ -68,6 +74,22 @@ public class ReaderConfig {
 
 	public void setReaderTask(String readerTask) {
 		this.readerTask = readerTask;
+	}
+
+	public Long getStartToken() {
+		return startToken;
+	}
+
+	public void setStartToken(Long startToken) {
+		this.startToken = startToken;
+	}
+
+	public Long getEndToken() {
+		return endToken;
+	}
+
+	public void setEndToken(Long endToken) {
+		this.endToken = endToken;
 	}
 	
 	

@@ -9,6 +9,9 @@ import java.util.Iterator;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.log4j.spi.LoggerFactory;
+import org.slf4j.Logger;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -24,6 +27,7 @@ public class CQLRowReaderImproved {
 	
 	private Session session;
 	
+	private static Logger logger = org.slf4j.LoggerFactory.getLogger(CQLRowReaderImproved.class);
 	
 	ReaderConfig config;
 	
@@ -57,20 +61,18 @@ public class CQLRowReaderImproved {
 		boolean more = true;
 		
 		//start at the beginning of the token range.
-		Long token = Long.MIN_VALUE;
+		Long startToken = config.getStartToken();
 		
-		//and MUST be larger than any column family row
-		//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
+		Long endToken = config.getEndToken();
+		
+		
 		int pageSize = config.getPageSize();
 		
 		//CQL Row count
 		long count = 0;
 		
 		
-		//simple container to keep track of all of items in the 
-		//last fetch
-		//Areas of improvement to the algorithm are possible, without having
-		//to waste more memory
+		//HashSet container to keep track of all of items in the last fetch
 		//it's compared to a current page count to exclude duplicates from previous
 		//query
 		HashSet<ByteBuffer> lastIdSet = new HashSet<ByteBuffer>(pageSize);
@@ -78,7 +80,7 @@ public class CQLRowReaderImproved {
 		while (more) {
 			
 			
-			SimpleStatement ss = new SimpleStatement( generateSelectPrefix(token)  );
+			SimpleStatement ss = new SimpleStatement( generateSelectPrefix(startToken,endToken)  );
 			
 			ResultSet rs = session.execute(ss);
 
@@ -95,37 +97,41 @@ public class CQLRowReaderImproved {
 			int curRowCount = 0;
 			HashSet<ByteBuffer> curIdSet = new HashSet<ByteBuffer>(pageSize);
 			
+			//THROUGH THE ROW RESULT - per start token
 			while (iter.hasNext()) {
 				curRowCount++;
 				row = iter.next();
 				
 				lastId = getCompositeKey(row);
-				//System.out.println("lastId: " + lastId);
+				
 				curIdSet.add(lastId);
 				if (lastIdSet.contains(lastId)) {
 					continue;
 				}
 				
-				token = row.getLong(2);
+				startToken = row.getLong(2);
 				
+				//internal count 
 				count++;
+				
 				try {
 					RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
 					rr.process(row);
 				}catch (Exception e) {
 					//will have been caught above
+					logger.error(e.getMessage(), e);
 				}
 			}
 			lastIdSet = curIdSet;
 			//exhausted the rs
 			if (curRowCount < pageSize ) {
-				System.out.println("page size " + pageSize+ " exceeds row count " + curRowCount);
+				logger.info("page size " + pageSize+ " exceeds row count " + curRowCount);
 				//System.out.println("Count: " + count + " start: " + startId + " token: " + token);
-				token++;
+				startToken++;
 				//break;
 			}
 			
-			System.out.println("Count: " + count + " token: " + token);
+			logger.info("Final Count: " + count + " token: " + startToken);
 		}
 		
 	}
@@ -153,7 +159,7 @@ public class CQLRowReaderImproved {
 		return ret;
 	}
 	
-	private String generateSelectPrefix(long token) {
+	private String generateSelectPrefix(long startToken, long endToken) {
 		StringBuilder builder = new StringBuilder("SELECT ");
 		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
 			builder.append(colinfo.name).append(",");
@@ -161,13 +167,14 @@ public class CQLRowReaderImproved {
 		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
 			builder.append(colinfo.name).append(",");
 		}
-		//a limitation in token function - only accepts single argument
+		//a limitation in token function - only accepts single argument - to doubly confirm
 		String tokenPart = "token(" + config.getPkConfig().getTokenPart()[0].name + ") ";
 		builder.append(tokenPart);
 		builder.append(" FROM " + config.getTable()+ " ");
 		
 		//where
-		builder.append(" WHERE " ).append(tokenPart).append(" >= " + token + " limit " + config.getPageSize() );
+		builder.append(" WHERE " ).append(tokenPart).append(" >= " + startToken + " and " + tokenPart + " < " +endToken)
+			.append(" limit " + config.getPageSize() );
 		return builder.toString();
 		
 	}
