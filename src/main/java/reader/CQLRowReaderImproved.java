@@ -5,11 +5,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
-
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
