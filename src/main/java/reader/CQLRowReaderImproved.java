@@ -1,21 +1,24 @@
 package reader;
 
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+
+
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.DefaultRetryPolicy;
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
-import com.datastax.driver.core.policies.LoggingRetryPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+
+import driver.em.CUtils;
+import driver.em.CassConfig;
 
 public class CQLRowReaderImproved {
 
@@ -26,6 +29,7 @@ public class CQLRowReaderImproved {
 	
 	static Properties properties = null;
 	
+	ReaderConfig config;
 	
 	/**
 	 * @param args
@@ -38,13 +42,26 @@ public class CQLRowReaderImproved {
 		
 		properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("app.properties"));
 		
-		
-		
+				
 		CQLRowReaderImproved reader = new CQLRowReaderImproved();
 		
-				
-		reader.cluster = reader.createCluster();
+		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
+		Unmarshaller unmarshaller = jc.createUnmarshaller();
+		InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream("reader-config.xml");
+		
+		reader.config = (ReaderConfig)unmarshaller.unmarshal(ins);
+		
+		reader.cluster = CUtils.createCluster(new CassConfig());
 		reader.session = reader.cluster.connect("icrs");
+		
+		Class.forName( reader.config.getReaderTask() ).newInstance();
+		
+		reader.read();
+		
+		System.exit(0);
+	}
+	
+	public void read() {
 		boolean more = true;
 		
 		//start at the beginning of the token range.
@@ -52,7 +69,7 @@ public class CQLRowReaderImproved {
 		
 		//and MUST be larger than any column family row
 		//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
-		int pageSize = 13;
+		int pageSize = config.getPageSize();
 		
 		//CQL Row count
 		long count = 0;
@@ -64,17 +81,14 @@ public class CQLRowReaderImproved {
 		//to waste more memory
 		//it's compared to a current page count to exclude duplicates from previous
 		//query
-		HashSet<String> lastIdSet = new HashSet<String>(pageSize);
+		HashSet<ByteBuffer> lastIdSet = new HashSet<ByteBuffer>(pageSize);
 		
 		while (more) {
 			
-			//SimpleStatement ss = new SimpleStatement("select id,token(id) from devices where token(id) > token('" + startToken + "') limit " +pageSize);
-			//System.out.println("StartToken: " + token + " startId " +startId);
-			//future: have configurable columns of the primary key.
-			//need the type as well
-			SimpleStatement ss = new SimpleStatement("select id,name,token(id) from devices where token(id) >= " + token + " limit " +pageSize);
 			
-			ResultSet rs = reader.session.execute(ss);
+			SimpleStatement ss = new SimpleStatement( generateSelectPrefix(token)  );
+			
+			ResultSet rs = session.execute(ss);
 
 
 			Iterator<Row> iter = rs.iterator();
@@ -83,17 +97,17 @@ public class CQLRowReaderImproved {
 			if (!iter.hasNext())
 				break;
 			//hold the last row id (composite key)
-			String lastId = null;
+			ByteBuffer lastId = null;
 			
 			Row row = null;
 			int curRowCount = 0;
-			HashSet<String> curIdSet = new HashSet<String>(pageSize);
+			HashSet<ByteBuffer> curIdSet = new HashSet<ByteBuffer>(pageSize);
 			
 			while (iter.hasNext()) {
 				curRowCount++;
 				row = iter.next();
-				//TODO: make this a composite value
-				lastId = row.getString(0)+":"+row.getString(1);
+				
+				lastId = getCompositeKey(row);
 				//System.out.println("lastId: " + lastId);
 				curIdSet.add(lastId);
 				if (lastIdSet.contains(lastId)) {
@@ -103,6 +117,12 @@ public class CQLRowReaderImproved {
 				token = row.getLong(2);
 				
 				count++;
+				try {
+					RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
+					rr.process(row);
+				}catch (Exception e) {
+					//will have been caught above
+				}
 			}
 			lastIdSet = curIdSet;
 			//exhausted the rs
@@ -116,42 +136,47 @@ public class CQLRowReaderImproved {
 			System.out.println("Count: " + count + " token: " + token);
 		}
 		
-		
-		System.exit(0);
 	}
-
-	private String getProperty(String key) {
-		return properties.getProperty(key);
-	}
-	private Integer getIntProperty(String key) {
-		return Integer.parseInt(properties.getProperty(key) );
-	}
-	private Cluster createCluster(){
-		Cluster cluster = Cluster.builder()
-				  .addContactPoints(getProperty("driver.contacts"))
-				  .withPort(getIntProperty("driver.port"))
-				  .withLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy(getProperty("driver.dcname"))))
-				  .withReconnectionPolicy(new ExponentialReconnectionPolicy(1000,60000))
-				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
-				  .withCredentials(getProperty("driver.username"), getProperty("driver.password"))
-				  
-				  .build();
-		// configure connection pool
-		cluster.getConfiguration().getPoolingOptions()
-				
-		       .setMaxConnectionsPerHost(HostDistance.LOCAL, getIntProperty("driver.maxconlocal"))
-		       .setMaxConnectionsPerHost(HostDistance.REMOTE, getIntProperty("driver.maxconremote"))
-		       .setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, getIntProperty("driver.simreq_conlocal"))
-		       .setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, getIntProperty("driver.simreq_conremote"));
-		// configure connection options
-		cluster.getConfiguration().getSocketOptions()
-		       //.setConnectTimeoutMillis(Integer.MAX_VALUE)
-		      // .setKeepAlive(true)
-		      // .setSoLinger(1000)
-		       .setConnectTimeoutMillis(Integer.MAX_VALUE);
-		       
-		
-		return cluster;		
+	//ByteBuffer simply packed together in order
+	//token part + non-token part
+	private ByteBuffer getCompositeKey(Row row) {
+		ArrayList<ByteBuffer> list = new ArrayList<>(config.getPkConfig().getTokenPart().length + config.getPkConfig().getNonTokenPart().length);
+		int balloc = 0;
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
+			balloc += b.array().length;
+			list.add(b);
+			
+		}
+		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
+			balloc += b.array().length;
+			list.add(b);
+			
+		}
+		ByteBuffer ret = ByteBuffer.allocate(balloc);
+		for (ByteBuffer bb:list) {
+			ret.put(bb);
+		}
+		return ret;
 	}
 	
+	private String generateSelectPrefix(long token) {
+		StringBuilder builder = new StringBuilder("SELECT ");
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			builder.append(colinfo.name).append(",");
+		}
+		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+			builder.append(colinfo.name).append(",");
+		}
+		//a limitation in token function - only accepts single argument
+		String tokenPart = "token(" + config.getPkConfig().getTokenPart()[0].name + ") ";
+		builder.append(tokenPart);
+		builder.append(" FROM " + config.getTable()+ " ");
+		
+		//where
+		builder.append(" WHERE " ).append(tokenPart).append(" >= " + token + " limit " + config.getPageSize() );
+		return builder.toString();
+		
+	}
 }

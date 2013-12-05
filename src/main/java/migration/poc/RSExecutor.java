@@ -8,6 +8,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
@@ -15,7 +18,7 @@ import com.datastax.driver.core.Session;
 public class RSExecutor {
 
 	protected Session session;
-	
+	static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
 	
 	XMLConfig config;
 	
