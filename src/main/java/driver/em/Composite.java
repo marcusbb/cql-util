@@ -28,7 +28,10 @@ public class Composite  {
     }
 
     public Composite(List<Object> l) {
-        objList = l;
+    	this.objList = l;
+    	 for (Object obj:l) {
+      	    dataTypes.add(TypeCodec.getDataTypeFor(obj));
+         }
     }
     //when you want to deserialize
     public Composite (DataType ...dts ) {

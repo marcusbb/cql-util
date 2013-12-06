@@ -13,6 +13,7 @@ import org.apache.log4j.spi.LoggerFactory;
 import org.slf4j.Logger;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -20,16 +21,19 @@ import com.datastax.driver.core.SimpleStatement;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
+import driver.em.Composite;
 
 public class CQLRowReaderImproved {
 
-	private Cluster cluster;
+	protected Cluster cluster;
 	
-	private Session session;
+	protected Session session;
 	
 	private static Logger logger = org.slf4j.LoggerFactory.getLogger(CQLRowReaderImproved.class);
 	
 	ReaderConfig config;
+	
+	long totalReadCount = 0;
 	
 	/**
 	 * @param args
@@ -68,22 +72,20 @@ public class CQLRowReaderImproved {
 		
 		int pageSize = config.getPageSize();
 		
-		//CQL Row count
-		long count = 0;
-		
+			
 		
 		//HashSet container to keep track of all of items in the last fetch
 		//it's compared to a current page count to exclude duplicates from previous
 		//query
-		HashSet<ByteBuffer> lastIdSet = new HashSet<ByteBuffer>(pageSize);
+		HashSet<Object> lastIdSet = new HashSet<Object>(pageSize);
 		
 		while (more) {
 			
-			
-			SimpleStatement ss = new SimpleStatement( generateSelectPrefix(startToken,endToken)  );
+			String cql = generateSelectPrefix(startToken,endToken) ;
+			logger.info("Executing cql: {} " ,cql);
+			SimpleStatement ss = new SimpleStatement( cql  );
 			
 			ResultSet rs = session.execute(ss);
-
 
 			Iterator<Row> iter = rs.iterator();
 			
@@ -91,28 +93,32 @@ public class CQLRowReaderImproved {
 			if (!iter.hasNext())
 				break;
 			//hold the last row id (composite key)
-			ByteBuffer lastId = null;
+			Object lastId = null;
 			
 			Row row = null;
 			int curRowCount = 0;
-			HashSet<ByteBuffer> curIdSet = new HashSet<ByteBuffer>(pageSize);
+			HashSet<Object> curIdSet = new HashSet<Object>(pageSize);
 			
+						
 			//THROUGH THE ROW RESULT - per start token
+			long curReadCount = 0;
 			while (iter.hasNext()) {
 				curRowCount++;
 				row = iter.next();
 				
-				lastId = getCompositeKey(row);
+				lastId = getRowCompositeKey(row);
+				logger.debug("lastId {}, contained {}" + lastId , lastIdSet.contains(lastId));
 				
 				curIdSet.add(lastId);
 				if (lastIdSet.contains(lastId)) {
 					continue;
 				}
-				
-				startToken = row.getLong(2);
+				//token is selected as the first column
+				startToken = row.getLong(0);
 				
 				//internal count 
-				count++;
+				totalReadCount++;
+				curReadCount++;
 				
 				try {
 					RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
@@ -129,26 +135,64 @@ public class CQLRowReaderImproved {
 				//System.out.println("Count: " + count + " start: " + startId + " token: " + token);
 				startToken++;
 				//break;
+			} 
+			if (curReadCount == 0) {
+				logger.info("No rows read at token {}" , startToken);
+				startToken++;
 			}
 			
-			logger.info("Final Count: " + count + " token: " + startToken);
+			logger.info("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
 		}
 		
 	}
-	//ByteBuffer simply packed together in order
-	//token part + non-token part
+	
+	private ByteBuffer getRowCompositeKey(Row row) {
+		ArrayList<Object> objList = new ArrayList<>();
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			objList.add(get(row,colinfo));			
+		}
+		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+			objList.add(get(row,colinfo));	
+		}
+		return Composite.toByteBuffer(objList);
+		//return ret;
+		
+	}
+	private Object get(Row row,ColumnInfo info) {
+		Object ret = null;
+		if (DataType.ascii().equals(info.type) )
+			ret = row.getString(info.name);
+		else if (DataType.bigint().equals(info.type))
+			ret = row.getLong(info.name);
+		else if (DataType.cdouble().equals(info.type))
+			ret = row.getDouble(info.name);
+		return ret;
+	}
+	private String getStringCompositeKey(Row row) {
+		ByteBuffer bb = getCompositeKey(row);
+		
+		return new String(bb.array()).trim();
+	}
+	/**
+	 * There is something weird here with the operation {@link Row#getBytesUnsafe(String)}
+	 * Test this in the 2.0 driver.
+	 * 
+	 * 
+	 * @param row
+	 * @return
+	 */
 	private ByteBuffer getCompositeKey(Row row) {
 		ArrayList<ByteBuffer> list = new ArrayList<>(config.getPkConfig().getTokenPart().length + config.getPkConfig().getNonTokenPart().length);
 		int balloc = 0;
 		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
 			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
-			balloc += b.array().length;
+			balloc += b.capacity();
 			list.add(b);
 			
 		}
 		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
 			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
-			balloc += b.array().length;
+			balloc += b.capacity();
 			list.add(b);
 			
 		}
@@ -156,20 +200,24 @@ public class CQLRowReaderImproved {
 		for (ByteBuffer bb:list) {
 			ret.put(bb);
 		}
+		ret.rewind();
+		logger.debug("getCompositeKey: <{}>" , ret);
+		logger.debug("getCompositeKey: <{}>" , new String (ret.array()));
 		return ret;
 	}
 	
 	private String generateSelectPrefix(long startToken, long endToken) {
 		StringBuilder builder = new StringBuilder("SELECT ");
+		//a limitation in token function - only accepts single argument - to doubly confirm
+		String tokenPart = "token(" + config.getPkConfig().getTokenPart()[0].name + ") ";
+		builder.append(tokenPart).append(",");
 		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
 			builder.append(colinfo.name).append(",");
 		}
 		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
 			builder.append(colinfo.name).append(",");
 		}
-		//a limitation in token function - only accepts single argument - to doubly confirm
-		String tokenPart = "token(" + config.getPkConfig().getTokenPart()[0].name + ") ";
-		builder.append(tokenPart);
+		builder.replace(builder.length()-1, builder.length(), "");
 		builder.append(" FROM " + config.getTable()+ " ");
 		
 		//where
@@ -177,5 +225,9 @@ public class CQLRowReaderImproved {
 			.append(" limit " + config.getPageSize() );
 		return builder.toString();
 		
+	}
+	
+	public Long getTotalReadCount() {
+		return totalReadCount;
 	}
 }

@@ -25,7 +25,7 @@ public class ReaderConfig {
 	
 	private Long endToken = Long.MAX_VALUE;
 	
-	private String readerTask = RowCountTask.class.getName();
+	private String readerTask = LoggingRowTask.class.getName();
 	
 	
 	public CassConfig getCassConfig() {
