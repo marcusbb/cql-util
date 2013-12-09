@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
@@ -30,22 +29,14 @@ import driver.em.TestBase;
  * 
  * 
  */
-public class ReaderTests {
+public class PerformanceReaderTests {
 
 	static CQLRowReaderImproved reader = null;
-	
 	static Session session = null;
-	static Cluster cluster = null;
-	
+
 	@BeforeClass
 	public static void beforeClass() throws Exception {
 
-		cluster = CUtils.createCluster(new CassConfig());
-		session = cluster.connect("icrs");	
-	}
-
-	@Before
-	public void before() throws Exception {
 		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
@@ -53,10 +44,13 @@ public class ReaderTests {
 		reader = new CQLRowReaderImproved();
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
-		reader.cluster = cluster;
-		reader.session = session;
-		
-		
+		reader.cluster = CUtils.createCluster(new CassConfig());
+		reader.session = reader.cluster.connect("icrs");
+		session = reader.session;
+	}
+
+	@Before
+	public void before() {
 		try {
 			session.execute("drop table devices");
 		} catch (Exception e) {
@@ -66,43 +60,11 @@ public class ReaderTests {
 
 	}
 
-	// put in a number less than the page size
-	@Test
-	public void testUnderFlow() {
-		reader.config.setPageSize(1001);
-		insertSeqDev(100);
-
-		reader.read();
-
-	}
-
 	
 	@Test
-	public void testOverFlowSize5Page12() {
-		insertSeqDev(12);
-		reader.config.setPageSize(5);
-		reader.read();
-	}
-	@Test
-	public void testOverFlowPage100Size150() {
-		insertSeqDev(150);
-		reader.config.setPageSize(100);
-		reader.read();
-	}
-
-	// larger but a modulus of page size
-	@Test
-	public void testOverFlowPage100() {
-		insertSeqDev(1000);
-		reader.config.setPageSize(100);
-		reader.read();
-	}
-
-	@Test
-	public void testRowAndCol() {
-		//500 cql rows
-		insertSeqDev2(100, 5);
-		reader.config.setPageSize(100);
+	public void testPerform100K() {
+		insertSeqDev(100000);
+		
 		reader.read();
 		
 	}

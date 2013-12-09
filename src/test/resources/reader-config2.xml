@@ -20,13 +20,17 @@
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
 	<keyspace>icrs</keyspace>
-	<table>devices</table>
+	<table>devices2</table>
 	<pageSize>1000</pageSize>
 	<pkConfig>
 		<tokenPart>
 			<name>id</name>
 			<type>ASCII</type>
 		</tokenPart>
+		<nonTokenPart>
+			<name>type</name>
+			<type>ASCII</type>
+		</nonTokenPart>
 		<nonTokenPart>
 			<name>name</name>
 			<type>ASCII</type>

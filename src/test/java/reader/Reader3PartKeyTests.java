@@ -30,10 +30,9 @@ import driver.em.TestBase;
  * 
  * 
  */
-public class ReaderTests {
+public class Reader3PartKeyTests {
 
 	static CQLRowReaderImproved reader = null;
-	
 	static Session session = null;
 	static Cluster cluster = null;
 	
@@ -49,7 +48,7 @@ public class ReaderTests {
 		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream("reader-config.xml");
+				.getResourceAsStream("reader-config2.xml");
 		reader = new CQLRowReaderImproved();
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
@@ -58,12 +57,12 @@ public class ReaderTests {
 		
 		
 		try {
-			session.execute("drop table devices");
-		} catch (Exception e) {
-			// this is OK
+			session.execute("drop table devices2");
+		}catch (Exception e) {
+			//this is ok
 		}
-		session.execute("create table devices (  id text, name text, value text,  value_ascii ascii, value_d bigint,  PRIMARY KEY (id, name) )");
-
+		
+		session.execute("create table devices2 (  id text, type text, name text, value text,  PRIMARY KEY (id, type, name) )");
 	}
 
 	// put in a number less than the page size
@@ -106,20 +105,22 @@ public class ReaderTests {
 		reader.read();
 		
 	}
+	
+	
 	public void insertSeqDev(int num) {
-		DefaultEntityManager<Device.Id, Device> em = new DefaultEntityManager<>(
-				session, Device.class);
+		DefaultEntityManager<Device2.Id, Device2> em = new DefaultEntityManager<>(
+				session, Device2.class);
 		for (int i = 0; i < num; i++) {
-			Device entity = new Device("id-" + i, "name-" + i, "val-" + i);
+			Device2 entity = new Device2("id-" + i, "name-" + i,"type-"+i, "val-" + i);
 			em.persist(entity, CUtils.getDefaultParams());
 		}
 	}
 	public void insertSeqDev2(int rowNum,int colCount) {
-		DefaultEntityManager<Device.Id, Device> em = new DefaultEntityManager<>(
-				session, Device.class);
+		DefaultEntityManager<Device2.Id, Device2> em = new DefaultEntityManager<>(
+				session, Device2.class);
 		for (int i = 0; i < rowNum; i++) {
 			for (int j=0;j<colCount;j++) {
-				Device entity = new Device("id-" + i, "name-" + j, "val-" + j);
+				Device2 entity = new Device2("id-" + i, "name-" + j,"type-"+j, "val-" + j);
 				em.persist(entity, CUtils.getDefaultParams());
 			}
 		}
