@@ -9,7 +9,6 @@ import java.util.Iterator;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import org.apache.log4j.spi.LoggerFactory;
 import org.slf4j.Logger;
 
 import com.datastax.driver.core.Cluster;

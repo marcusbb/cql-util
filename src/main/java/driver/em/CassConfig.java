@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 
  * Most configuration should do with reasonable defaults OR not set at all.
- * 
+ * Rename this to DefaultCassConfig
  */
 public class CassConfig implements Serializable {
 

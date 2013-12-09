@@ -4,7 +4,7 @@ import com.datastax.driver.core.Session;
 
 /**
  * 
- * remove the need for templating your entity managers
+ * remove the need for templating your entity managers from {@link AbstractEntityManager}
  *
  * @param <K>
  * @param <E>
