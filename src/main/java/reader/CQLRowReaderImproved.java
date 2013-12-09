@@ -82,8 +82,10 @@ public class CQLRowReaderImproved {
 		while (more) {
 			
 			String cql = generateSelectPrefix(startToken,endToken) ;
-			logger.info("Executing cql: {} " ,cql);
 			SimpleStatement ss = new SimpleStatement( cql  );
+			ByteBuffer[] routeKey = CUtils.getBytesForRoute(startToken);
+			ss.setRoutingKey(routeKey);
+			logger.info("Executing cql: {} , routeKey: {} " ,cql, startToken);
 			
 			ResultSet rs = session.execute(ss);
 
