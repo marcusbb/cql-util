@@ -11,6 +11,8 @@ public class ReaderConfig {
 
 	private CassConfig cassConfig;
 
+	private String keyspace;
+	
 	private String table;
 	
 	private PKConfig pkConfig;
@@ -42,6 +44,14 @@ public class ReaderConfig {
 
 	public void setTable(String table) {
 		this.table = table;
+	}
+	
+	public String getKeyspace() {
+		return keyspace;
+	}
+
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
 	}
 
 	public PKConfig getPkConfig() {

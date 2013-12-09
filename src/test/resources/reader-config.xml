@@ -19,6 +19,7 @@
 		<soLinger>5000</soLinger>
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
+	<keyspace>icrs</keyspace>
 	<table>devices</table>
 	<pageSize>1000</pageSize>
 	<pkConfig>

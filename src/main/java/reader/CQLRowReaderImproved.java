@@ -50,7 +50,7 @@ public class CQLRowReaderImproved {
 		reader.config = (ReaderConfig)unmarshaller.unmarshal(ins);
 		
 		reader.cluster = CUtils.createCluster(new CassConfig());
-		reader.session = reader.cluster.connect("icrs");
+		reader.session = reader.cluster.connect(reader.config.getKeyspace());
 		
 		//for exception safety below
 		Class.forName( reader.config.getReaderTask() ).newInstance();
