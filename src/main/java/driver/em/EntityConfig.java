@@ -334,18 +334,27 @@ public class EntityConfig<T> {
 		}else if (DataType.blob().equals(mapping.type)) {
 			value = row.getBytes(def.getName());
 			
-		}else if (DataType.map(DataType.text(),DataType.text()).equals(mapping.type)) {
+		} else if (DataType.map(DataType.text(),DataType.text()).equals(mapping.type)) {
 			value = row.getMap(def.getName(), String.class, String.class);
 			
-		}else if (DataType.cint().equals(mapping.type)) {
+		} else if (DataType.cint().equals(mapping.type)) {
 			value = row.getInt(def.getName());
 		} else if (DataType.bigint().equals(mapping.type)) {
 			value = row.getLong(def.getName());
-		}		
-		else if (DataType.timestamp().equals(mapping.type)) {
+		} else if (DataType.timestamp().equals(mapping.type)) {
 			value = row.getDate(def.getName());
-		}else if (DataType.blob().equals(mapping.type)) {
+		} else if (DataType.blob().equals(mapping.type)) {
 			value = row.getBytes(def.getName());
+		} else if (DataType.cdouble().equals(mapping.type)) {
+			value = row.getBytes(def.getName());
+		} else if (DataType.cfloat().equals(mapping.type) ) {
+			value = row.getFloat(def.getName());
+		} else if (DataType.inet().equals(mapping.type)) {
+			value = row.getInet(def.getName());
+		} else if (DataType.cboolean().equals(mapping.type)) {
+			value = row.getBool(def.getName());
+		} else if (DataType.uuid().equals(mapping.type)) {
+			value = row.getUUID(def.getName());
 		}
 		//what if value is null? primitives won't like this
 		return value;

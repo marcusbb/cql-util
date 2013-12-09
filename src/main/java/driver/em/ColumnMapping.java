@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 
 import com.datastax.driver.core.DataType;
@@ -104,7 +105,21 @@ public class ColumnMapping {
 			type = DataType.timestamp();
 		}else if (ByteBuffer.class.equals(ft)) {
 			type = DataType.blob();
-		}
+		} else if (Double.class.equals(ft)) {
+			type = DataType.cdouble();
+		} else if (double.class.equals(ft)) {
+			type = DataType.cdouble();
+		} else if (Float.class.equals(ft)) {
+			type = DataType.cfloat();
+		} else if (float.class.equals(ft)) {
+			type = DataType.cfloat();
+		} else if (Boolean.class.equals(ft)) {
+			type = DataType.cboolean();
+		} 
+		//how to differentiate type tuuid and uuid
+		else if (UUID.class.equals(ft)) {
+			type = DataType.uuid();
+		} 
 		//java.sql.timestamp is not directly supported
 		//remove it for now
 		/*else if (Timestamp.class.equals(ft)) {
@@ -113,7 +128,7 @@ public class ColumnMapping {
 			type = DataType.map(DataType.text(), DataType.text());
 		}
 		
-		//TODO and so and so
+		//getter and setter find
 		try {
 			String getMeth = "get" + field.getName().substring(0,1).toUpperCase() + field.getName().substring(1);
 			String setMeth = "set" + field.getName().substring(0,1).toUpperCase() + field.getName().substring(1);
