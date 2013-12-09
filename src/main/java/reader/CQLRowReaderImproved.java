@@ -108,7 +108,7 @@ public class CQLRowReaderImproved {
 				row = iter.next();
 				
 				lastId = getRowCompositeKey(row);
-				logger.debug("lastId {}, contained {}" + lastId , lastIdSet.contains(lastId));
+				//logger.debug("lastId {}, contained {}" + lastId , lastIdSet.contains(lastId));
 				
 				curIdSet.add(lastId);
 				if (lastIdSet.contains(lastId)) {
