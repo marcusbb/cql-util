@@ -39,13 +39,15 @@ public class CQLRowReaderImproved {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		
+		String configFile = System.getProperty("config");
+		if (configFile == null)
+			configFile = "reader-config.xml";
 				
 		CQLRowReaderImproved reader = new CQLRowReaderImproved();
 		
 		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
-		InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream("reader-config.xml");
+		InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFile);
 		
 		reader.config = (ReaderConfig)unmarshaller.unmarshal(ins);
 		
