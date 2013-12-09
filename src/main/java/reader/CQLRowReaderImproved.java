@@ -161,6 +161,7 @@ public class CQLRowReaderImproved {
 		//return ret;
 		
 	}
+	//TODO: expand to support richer set of types
 	private Object get(Row row,ColumnInfo info) {
 		Object ret = null;
 		if (DataType.ascii().equals(info.type) )
