@@ -10,6 +10,7 @@ import java.io.Serializable;
  */
 public class CassConfig implements Serializable {
 
+	private static final long serialVersionUID = 4764982374610680602L;
 	
 	
 	private static final long serialVersionUID = 4764982374610680602L;
