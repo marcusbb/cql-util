@@ -12,12 +12,19 @@ Main motivation is to reduce boilerplate code to map data structure classes (bea
 
 2. [JDBC to Cassandra migration tool]
 (master/src/main/java/migration/)
-A completely configuration driven mechanism for moving data from MySQL/Oracle to Cassandra.
+A configuration driven mechanism for moving data from MySQL/Oracle (or any jdbc interface) to Cassandra.
 
 3. [All rows reader]
 (master/src/main/java/reader/)
 Paginated loading of all rows, with configurable tokens, and columns to query.
 
+Requirements:
+- Java 1.7
+- Maven - not published to any public repos as of yet
+- Cassandra - a cluster to connect to, both 1.2.x and 2.0.x have been tested. 
+
+Currently all unit tests require a server to be running on a local machine with keyspace icrs provisioned.
+I'll change that shortly.
 
 Want to participate or have questions?  Please email me at msimonsen@blackberry.com
 
