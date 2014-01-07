@@ -1,7 +1,8 @@
 And all rows reader.  Or a reader with configurable columns returned and read.
 
 The algorithm is premised with the CQL support for token query statements.
-select col1,col2 where token(part_key) > starttoken and token <= endtoken.
+select col1,col2 where token(part_key) > starttoken and token(part_key) <= endtoken.
+*part_key => Cassandra partitioning key defined by the partitioning strategy of the server.
 
 It takes care of pagination (ie. limit) and discarding duplicates.
 Taking care of duplicates and handling of the token ranges are the real value of this.
