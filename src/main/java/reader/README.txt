@@ -12,7 +12,7 @@ LoggingRowTask - logs and nothing more
 RowCountTask - total CQL row count
 
  
-Why not use count(*).  If you have even a somewhat reasonable number of rows (millions)
+Why not use count(*)?  If you have even a somewhat reasonable number of rows (millions)
 than you're almost sure to have a OOM doing this aggregation operation on the server.
 This tool helps you process all rows in a more defined manner that won't kill C* server
 and won't timeout in the process.
@@ -21,7 +21,7 @@ Features: configurable start and end token, so that you may split and distribute
 process or tasks separately.  This will lend itself to a multi-threaded fetch or a
 distributed fetch operation.
 
-Configuration based knowlege of table, partition column.  
+Configuration based knowledge of table, partition column.  
 
 Why do we need to know the composite row key?  The algorithm does not assume that each
 partition row key is a primary key, as it could be parts.  And further more, we
