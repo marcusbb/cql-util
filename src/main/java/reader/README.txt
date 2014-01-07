@@ -1,5 +1,16 @@
 And all rows reader.  Or a reader with configurable columns returned and read.
 
+The algorithm is premised with the CQL support for token query statements.
+select col1,col2 where token(part_key) > starttoken and token <= endtoken.
+
+It takes care of pagination (ie. limit) and discarding duplicates.
+Taking care of duplicates and handling of the token ranges are the real value of this.
+
+There are basic recipes for doing basic aggregate functions:
+LoggingRowTask - logs and nothing more
+RowCountTask - total CQL row count
+
+ 
 Why not use count(*).  If you have even a somewhat reasonable number of rows (millions)
 than you're almost sure to have a OOM doing this aggregation operation on the server.
 This tool helps you process all rows in a more defined manner that won't kill C* server
