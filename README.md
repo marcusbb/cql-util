@@ -18,6 +18,8 @@ A completely configuration driven mechanism for moving data from MySQL/Oracle to
 (master/src/main/java/reader/)
 Paginated loading of all rows, with configurable tokens, and columns to query.
 
+Currently all unit tests require a server to be running on a local machine with keyspace icrs provisioned.
+I'll change that shortly.
 
 Want to participate or have questions?  Please email me at msimonsen@blackberry.com
 
