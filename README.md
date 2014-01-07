@@ -7,10 +7,10 @@ The project originally as entity mapping on the java driver 2.0, but has morphed
 Currently this is broken into 3 distinct projects
 
 1. [Entity mapping for the java driver ]
-(master/src/main/java/driver/em/README.txt)
+(master/src/main/java/driver/em/)
 
 2. [JDBC to Cassandra migration tool]
-(master/src/main/java/migration/README.txt)
+(master/src/main/java/migration/)
 
 3. [All rows reader]
-(master/src/main/java/reader/README.txt)
+(master/src/main/java/reader/)
