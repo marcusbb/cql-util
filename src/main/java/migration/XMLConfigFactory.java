@@ -1,4 +1,4 @@
-package migration.poc;
+package migration;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
