@@ -30,7 +30,6 @@ public class ReaderConfig implements Serializable {
 	
 	private Long endToken = Long.MAX_VALUE;
 	
-	private String readerTask = LoggingRowTask.class.getName();
 	
 	
 	public CassConfig getCassConfig() {
@@ -81,13 +80,7 @@ public class ReaderConfig implements Serializable {
 		this.otherCols = otherCols;
 	}
 
-	public String getReaderTask() {
-		return readerTask;
-	}
-
-	public void setReaderTask(String readerTask) {
-		this.readerTask = readerTask;
-	}
+	
 
 	public Long getStartToken() {
 		return startToken;
@@ -111,7 +104,7 @@ public class ReaderConfig implements Serializable {
 				+ keyspace + ", table=" + table + ", pkConfig=" + pkConfig
 				+ ", otherCols=" + Arrays.toString(otherCols) + ", pageSize="
 				+ pageSize + ", startToken=" + startToken + ", endToken="
-				+ endToken + ", readerTask=" + readerTask + "]";
+				+ endToken +  "]";
 	}
 	
 	

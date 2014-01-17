@@ -1,13 +1,9 @@
 package reader;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 
@@ -19,7 +15,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 
 import driver.em.CUtils;
-import driver.em.CassConfig;
 import driver.em.Composite;
 
 public class CQLRowReader {
@@ -32,15 +27,35 @@ public class CQLRowReader {
 	
 	ReaderConfig config;
 	
+	ReaderJob job;
+	
 	long totalReadCount = 0;
 	
+	//should remove this
 	public CQLRowReader() {
-		
+		job = new ReaderJob() {
+			
+			@Override
+			public RowReaderTask<Void> newTask() throws Exception {
+				return new RowReaderTask<Void>() {
+
+					@Override
+					public void process(Row row) {
+						logger.debug("Reading Row");
+						
+					}
+				};
+			}
+		};
+	}
+	public CQLRowReader(ReaderJob job) {
+		this.job = job;
 	}
 	//self bootstrapping
-	public CQLRowReader(ReaderConfig config) {
+	public CQLRowReader(ReaderConfig config,ReaderJob job) {
 		CUtils.createCluster(config.getCassConfig());
 		this.session = cluster.connect(config.getKeyspace());
+		this.job = job;
 	}
 	
 	public void read() {
@@ -105,7 +120,7 @@ public class CQLRowReader {
 				curReadCount++;
 				
 				try {
-					RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
+					RowReaderTask rr =  job.newTask();
 					rr.process(row);
 				}catch (Exception e) {
 					//will have been caught above

@@ -5,6 +5,7 @@ import java.io.Serializable;
 import com.hazelcast.core.Member;
 
 import reader.ReaderConfig;
+import reader.ReaderJob;
 
 public class DistReaderConfig extends ReaderConfig implements Serializable {
 
@@ -33,7 +34,5 @@ public class DistReaderConfig extends ReaderConfig implements Serializable {
 	public void setTargetMember(Member targetMember) {
 		this.targetMember = targetMember;
 	}
-	
-	
-	
+
 }

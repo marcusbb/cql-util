@@ -35,7 +35,7 @@ public class ReaderMain {
 		reader.session = reader.cluster.connect(reader.config.getKeyspace());
 		
 		//for exception safety below
-		Class.forName( reader.config.getReaderTask() ).newInstance();
+		//Class.forName( reader.config.getReaderTask() ).newInstance();
 		
 		reader.read();
 		

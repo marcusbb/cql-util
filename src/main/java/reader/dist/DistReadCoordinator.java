@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import reader.ReaderConfig;
+import reader.ReaderJob;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,7 +33,7 @@ public class DistReadCoordinator {
 	 * 
 	 * @param execService
 	 */
-	public List<CompletionCallback> execute(String execName) {
+	public List<CompletionCallback> execute(String execName,ReaderJob job) {
 		
 		IExecutorService execService = hz.getExecutorService(execName);
 		
@@ -43,7 +44,7 @@ public class DistReadCoordinator {
 		for (int i=0;i<configs.length;i++) {
 			CompletionCallback callback = new CompletionCallback();
 			callbackResults.add(callback);
-			execService.submitToMember(new DistReadTask(configs[i]), configs[i].getTargetMember(),callback);
+			execService.submitToMember(new DistReadTask(configs[i],job), configs[i].getTargetMember(),callback);
 		}
 		return callbackResults;
 	}
