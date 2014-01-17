@@ -17,6 +17,10 @@ A configuration driven mechanism for moving data from MySQL/Oracle (or any jdbc 
 3. [All rows reader]
 (master/src/main/java/reader/)
 Paginated loading of all rows, with configurable tokens, and columns to query.
+3a. [Distributed all rows reader]
+(master/src/main/java/reader/dist)
+which currently is hosted in this project but can be moved out.  Clients will have a hazelcast 3.x dependency but
+need not use it as the CQLReader works in stand alone mode as well.
 
 Requirements:
 - Java 1.7

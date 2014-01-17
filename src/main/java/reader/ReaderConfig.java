@@ -1,5 +1,8 @@
 package reader;
 
+import java.io.Serializable;
+import java.util.Arrays;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -7,7 +10,7 @@ import driver.em.CassConfig;
 
 
 @XmlRootElement(name="config")
-public class ReaderConfig {
+public class ReaderConfig implements Serializable {
 
 	private CassConfig cassConfig;
 
@@ -100,6 +103,15 @@ public class ReaderConfig {
 
 	public void setEndToken(Long endToken) {
 		this.endToken = endToken;
+	}
+
+	@Override
+	public String toString() {
+		return "ReaderConfig [cassConfig=" + cassConfig + ", keyspace="
+				+ keyspace + ", table=" + table + ", pkConfig=" + pkConfig
+				+ ", otherCols=" + Arrays.toString(otherCols) + ", pageSize="
+				+ pageSize + ", startToken=" + startToken + ", endToken="
+				+ endToken + ", readerTask=" + readerTask + "]";
 	}
 	
 	

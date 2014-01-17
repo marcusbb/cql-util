@@ -34,7 +34,14 @@ public class CQLRowReader {
 	
 	long totalReadCount = 0;
 	
-	
+	public CQLRowReader() {
+		
+	}
+	//self bootstrapping
+	public CQLRowReader(ReaderConfig config) {
+		CUtils.createCluster(config.getCassConfig());
+		this.session = cluster.connect(config.getKeyspace());
+	}
 	
 	public void read() {
 		boolean more = true;
