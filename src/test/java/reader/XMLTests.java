@@ -6,7 +6,7 @@ import java.io.File;
 
 import javax.xml.bind.JAXBContext;
 
-import migration.poc.XMLConfig;
+import migration.XMLConfig;
 
 import org.apache.cassandra.db.ColumnIndex;
 import org.junit.Test;

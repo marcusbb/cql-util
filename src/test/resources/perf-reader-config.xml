@@ -5,7 +5,7 @@
 		<concurrentLocal>100</concurrentLocal>
 		<concurrentRemote>100</concurrentRemote>
 		<connectionTimeoutMs>5000</connectionTimeoutMs>
-		<contactHostsName>localhost</contactHostsName>
+		<contactHostsName>marcus-v4.rim.net</contactHostsName>
 		
 		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
 		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
@@ -23,13 +23,14 @@
 	<table>devices</table>
 	<pageSize>1000</pageSize>
 	<pkConfig>
-		<nonTokenPart>
-			<name>name</name>
-			<type>ASCII</type>
-		</nonTokenPart>
 		<tokenPart>
 			<name>id</name>
 			<type>ASCII</type>
 		</tokenPart>
+		<nonTokenPart>
+			<name>name</name>
+			<type>ASCII</type>
+		</nonTokenPart>
+		
 	</pkConfig>
 </config>

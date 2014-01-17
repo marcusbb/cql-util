@@ -31,7 +31,7 @@ import driver.em.TestBase;
  */
 public class PerformanceReaderTests {
 
-	static CQLRowReaderImproved reader = null;
+	static CQLRowReader reader = null;
 	static Session session = null;
 
 	@BeforeClass
@@ -40,11 +40,11 @@ public class PerformanceReaderTests {
 		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream("reader-config.xml");
-		reader = new CQLRowReaderImproved();
+				.getResourceAsStream("perf-reader-config.xml");
+		reader = new CQLRowReader();
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
-		reader.cluster = CUtils.createCluster(new CassConfig());
+		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
 		reader.session = reader.cluster.connect("icrs");
 		session = reader.session;
 	}

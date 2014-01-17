@@ -10,6 +10,7 @@ import javax.xml.bind.Unmarshaller;
 
 import junit.framework.Assert;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import driver.em.TestBase;
  */
 public class ReaderTests {
 
-	static CQLRowReaderImproved reader = null;
+	static CQLRowReader reader = null;
 	
 	static Session session = null;
 	static Cluster cluster = null;
@@ -50,7 +51,7 @@ public class ReaderTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("reader-config.xml");
-		reader = new CQLRowReaderImproved();
+		reader = new CQLRowReader();
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = cluster;
@@ -66,6 +67,10 @@ public class ReaderTests {
 
 	}
 
+	@AfterClass
+	public static void afterClass() {
+		cluster.shutdown();
+	}
 	// put in a number less than the page size
 	@Test
 	public void testUnderFlow() {

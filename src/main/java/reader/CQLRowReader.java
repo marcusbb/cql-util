@@ -22,45 +22,19 @@ import driver.em.CUtils;
 import driver.em.CassConfig;
 import driver.em.Composite;
 
-public class CQLRowReaderImproved {
+public class CQLRowReader {
 
 	protected Cluster cluster;
 	
 	protected Session session;
 	
-	private static Logger logger = org.slf4j.LoggerFactory.getLogger(CQLRowReaderImproved.class);
+	private static Logger logger = org.slf4j.LoggerFactory.getLogger(CQLRowReader.class);
 	
 	ReaderConfig config;
 	
 	long totalReadCount = 0;
 	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception {
-		
-		String configFile = System.getProperty("config");
-		if (configFile == null)
-			configFile = "reader-config.xml";
-				
-		CQLRowReaderImproved reader = new CQLRowReaderImproved();
-		
-		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
-		Unmarshaller unmarshaller = jc.createUnmarshaller();
-		InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFile);
-		
-		reader.config = (ReaderConfig)unmarshaller.unmarshal(ins);
-		
-		reader.cluster = CUtils.createCluster(new CassConfig());
-		reader.session = reader.cluster.connect(reader.config.getKeyspace());
-		
-		//for exception safety below
-		Class.forName( reader.config.getReaderTask() ).newInstance();
-		
-		reader.read();
-		
-		System.exit(0);
-	}
+	
 	
 	public void read() {
 		boolean more = true;

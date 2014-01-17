@@ -1,4 +1,4 @@
-package migration.poc;
+package migration;
 
 import java.util.ArrayList;
 import java.util.List;

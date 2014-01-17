@@ -24,6 +24,7 @@ Only a sinlge threaded fetch model is supported, although a customized executor 
 for operations against the driver - although writes to C* should be very fast.
 Possible mechanism for paged or bulk loading is also possible.
 
+TODO: package the tool for command line usage - maven assembly
 
 Sample XML:
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

@@ -32,7 +32,7 @@ import driver.em.TestBase;
  */
 public class Reader3PartKeyTests {
 
-	static CQLRowReaderImproved reader = null;
+	static CQLRowReader reader = null;
 	static Session session = null;
 	static Cluster cluster = null;
 	
@@ -49,7 +49,7 @@ public class Reader3PartKeyTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("reader-config2.xml");
-		reader = new CQLRowReaderImproved();
+		reader = new CQLRowReader();
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = cluster;

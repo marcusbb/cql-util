@@ -10,10 +10,9 @@ import java.io.Serializable;
  */
 public class CassConfig implements Serializable {
 
-	
-	
 	private static final long serialVersionUID = 4764982374610680602L;
 	
+		
 	//Some reasonable testing defaults are supplied, tune for production
 	String [] contactHostsName = {"localhost","127.0.0.1"};
 	int nativePort = 9042;

@@ -1,4 +1,4 @@
-package migration.poc;
+package migration;
 
 import static driver.em.CharConst.*;
 
