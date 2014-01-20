@@ -15,6 +15,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 
 import driver.em.CUtils;
+import driver.em.CassConfig;
 import driver.em.Composite;
 
 public class CQLRowReader {
@@ -51,7 +52,13 @@ public class CQLRowReader {
 	public CQLRowReader(ReaderJob job) {
 		this.job = job;
 	}
-	//self bootstrapping
+	/**
+	 * Self bootstrapping - connects to the cassandra cluster.
+	 * 
+	 * @param config - {@link ReaderConfig} - which must contain cassandra configuraiton details {@link CassConfig}
+	 * @param job
+	 */
+	//with a given ReaderConfig
 	public CQLRowReader(ReaderConfig config,ReaderJob job) {
 		CUtils.createCluster(config.getCassConfig());
 		this.session = cluster.connect(config.getKeyspace());

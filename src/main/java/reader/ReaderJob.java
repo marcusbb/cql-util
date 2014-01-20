@@ -22,7 +22,12 @@ public abstract class ReaderJob implements Serializable {
 	}
 	
 	
-	//this should be abstract - definitely over-ridden
+	/**
+	 * Define a new task or pooled task - should be thread safe
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
 	public abstract RowReaderTask newTask() throws Exception;
 	
 	
