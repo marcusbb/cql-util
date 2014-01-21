@@ -5,10 +5,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import org.mortbay.jetty.InclusiveByteRange;
 import org.slf4j.Logger;
 
 import com.datastax.driver.core.Cluster;
@@ -17,6 +20,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
@@ -105,7 +109,8 @@ public class CQLRowReader {
 					logger.error(e.getMessage(), e);
 				}
 			}
-			lastIdSet = curIdSet;
+			 
+			
 			//exhausted the rs
 			if (curRowCount < pageSize ) {
 				logger.info("page size " + pageSize+ " exceeds row count " + curRowCount);
@@ -113,13 +118,56 @@ public class CQLRowReader {
 				startToken++;
 				//break;
 			} 
-			if (curReadCount == 0) {
+			//CHECK THAT WE HAVE A COMPLETE OVER-LAP COMPARED TO LAST READ
+			
+			if (curReadCount == 0 ) {
 				logger.info("No rows read at token {}" , startToken);
 				startToken++;
 			}
-			
+			if (curReadCount == 0 && lastIdSet.containsAll(curIdSet)) {
+				logger.warn("Wide row detected: pageSize must be greater than the widest CF row for optimal reading");
+				readWide(row);
+				startToken++;
+			}
+			lastIdSet = curIdSet;
 			logger.info("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
 		}
+		
+	}
+	//The pageSize is less than the size of the row, so we must 
+	//resort to using paging via the cluster key
+	//via assumes that the cluster key is ASC otherwise this logic may not work
+	protected void readWide(Row startRow) {
+		
+		Object partKey = get(startRow,config.getPkConfig().getTokenPart()[0]);
+		//this will be modified as we iterate through the wide row
+		Object clusterKey = get(startRow,config.getPkConfig().getNonTokenPart()[0]);
+		
+		boolean more =true;
+		//increment
+		while (more) {
+			String cql = generateWide(partKey, clusterKey, false,config.getPageSize());
+			ResultSet rs = session.execute(cql);
+			List<Row> allRows = rs.all();
+			if (allRows.size() == 0)
+				more =false;
+			else {
+				for (Row row:allRows) {
+					try {
+						RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
+						rr.process(row);
+					}catch (Exception e) {
+						//we will be changing how tasks are instantiated
+						logger.error(e.getMessage(), e);
+					}
+				}
+				
+				
+			}
+			
+		}
+		
+		
 		
 	}
 	
@@ -135,7 +183,7 @@ public class CQLRowReader {
 		//return ret;
 		
 	}
-	//TODO: expand to support richer set of types
+	//TODO: make sure we have the expanded set of items
 	private Object get(Row row,ColumnInfo info) {
 		Object ret = null;
 		if (DataType.ascii().equals(info.type) )
@@ -144,6 +192,14 @@ public class CQLRowReader {
 			ret = row.getLong(info.name);
 		else if (DataType.cdouble().equals(info.type))
 			ret = row.getDouble(info.name);
+		else if (DataType.timestamp().equals(info.type))
+			ret = row.getDate(info.name);
+		else if (DataType.cfloat().equals(info.type))
+			ret = row.getFloat(info.name);
+		else if (DataType.cint().equals(info.type))
+			ret = row.getInt(info.name); 
+		else if (DataType.uuid().equals(info.type))
+			ret = row.getUUID(info.name); 
 		return ret;
 	}
 	private String getStringCompositeKey(Row row) {
@@ -183,18 +239,63 @@ public class CQLRowReader {
 		logger.debug("getCompositeKey: <{}>" , new String (ret.array()));
 		return ret;
 	}
+	//partition key ids - support only one for now
+	
+	private String generateWide(Object ids,Object nextClusterKey,boolean inclusiveGT,int limit) {
+		
+		driver.em.SimpleStatement ss = new driver.em.SimpleStatement(prepareWide(inclusiveGT,limit), ids,nextClusterKey);
+		
+		return ss.buildQueryString();
+	}
+	private String prepareWide(boolean inclusiveGT,int limit) {
+		StringBuilder builder = new StringBuilder("SELECT  " );
+		
+		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+			builder.append(colinfo.name).append(",");
+		}
+		if (config.getOtherCols() != null)
+			for (String other:config.getOtherCols()) {
+				builder.append(other).append(",");
+			}
+		builder.replace(builder.length()-1, builder.length(), "");
+		builder.append(" FROM " + config.getTable()+ " WHERE ");
+		
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			builder.append(colinfo.name).append(" = ? AND ");
+		}
+		builder.append(config.getPkConfig().getNonTokenPart()[0].getName());
+		if (!inclusiveGT)
+			builder.append(" > ?");
+		else
+			builder.append(" >= ?");
+		builder.append(" limit " + limit);
+		return builder.toString();
+	}
 	
 	private String generateSelectPrefix(long startToken, long endToken) {
 		StringBuilder builder = new StringBuilder("SELECT ");
-		//a limitation in token function - only accepts single argument - to doubly confirm
-		String tokenPart = "token(" + config.getPkConfig().getTokenPart()[0].name + ") ";
-		builder.append(tokenPart).append(",");
+		StringBuilder tokenPart = new StringBuilder("token(");
+		int i = 0;
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			tokenPart.append(colinfo.name);
+			if (i<config.getPkConfig().getTokenPart().length -1)
+				tokenPart.append(", ");
+
+		}
+		tokenPart.append("), ");
+		builder.append(tokenPart);
+		
 		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
 			builder.append(colinfo.name).append(",");
 		}
 		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
 			builder.append(colinfo.name).append(",");
 		}
+		if (config.getOtherCols() != null)
+			for (String other:config.getOtherCols()) {
+				builder.append(other).append(",");
+			}
+		
 		builder.replace(builder.length()-1, builder.length(), "");
 		builder.append(" FROM " + config.getTable()+ " ");
 		

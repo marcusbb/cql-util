@@ -1,27 +1,17 @@
 package reader;
 
-import static org.junit.Assert.*;
-
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import junit.framework.Assert;
-
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
-import driver.em.CassConfig;
-import driver.em.Composite;
 import driver.em.DefaultEntityManager;
-import driver.em.SampleEntity;
-import driver.em.TestBase;
 
 /**
  * 
@@ -49,7 +39,7 @@ public class PerformanceReaderTests {
 		session = reader.session;
 	}
 
-	@Before
+	//@Before
 	public void before() {
 		try {
 			session.execute("drop table devices");
@@ -63,7 +53,7 @@ public class PerformanceReaderTests {
 	
 	@Test
 	public void testPerform100K() {
-		insertSeqDev(100000);
+		//insertSeqDev(100000);
 		
 		reader.read();
 		
@@ -88,18 +78,5 @@ public class PerformanceReaderTests {
 	}
 	
 	
-	@Test
-	public void testByteBufferEquality() {
-		String one = "one";
-		
-		ByteBuffer bb = Composite.toByteBuffer(new Object[]{"one","two"});
-		ByteBuffer bb2 = Composite.toByteBuffer(new Object[]{ByteBuffer.wrap(one.getBytes()),"two"});
-		ByteBuffer bb3 = Composite.toByteBuffer(new Object[]{"two","one"});
-		bb2.limit();bb2.array();
-		
-		//bb3.flip();
-		Assert.assertTrue(bb.equals(bb2));
-		Assert.assertFalse(bb.equals(bb3));
-		
-	}
+	
 }
