@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.datastax.driver.core.Row;
 
-public class RowCountJob extends ReaderJob {
+public class RowCountJob extends ReaderJob<Void> {
 
 	/**
 	 * 
@@ -18,9 +18,9 @@ public class RowCountJob extends ReaderJob {
 			this.count = count;
 		}
 		@Override
-		public void process(Row row) {
+		public Void process(Row row) {
 			count.incrementAndGet();
-			
+			return null;
 		}
 		
 	}
@@ -30,5 +30,12 @@ public class RowCountJob extends ReaderJob {
 		return new RowTask(this.count);
 	}
 
+	@Override
+	public void processResult(Void result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	
 	
 }

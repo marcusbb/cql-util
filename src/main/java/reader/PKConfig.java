@@ -15,7 +15,9 @@ import driver.em.Composite;
 public class PKConfig {
 
 	//currently token can only have one part
+	//rename this to paritionKeys - as a limit of 1 at the moment due to CQL issue
 	private ColumnInfo[] tokenPart;
+	//rename to clusterKeys
 	private ColumnInfo[] nonTokenPart;
 	
 	public PKConfig() {

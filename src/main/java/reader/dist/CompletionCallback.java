@@ -7,7 +7,12 @@ import reader.CQLRowReader;
 
 import com.hazelcast.core.ExecutionCallback;
 
-public class CompletionCallback implements ExecutionCallback<ReaderResult>{
+/**
+ * 
+ * 
+ *
+ */
+public abstract class CompletionCallback implements ExecutionCallback<ReaderResult>{
 
 	private static Logger logger = LoggerFactory.getLogger(CQLRowReader.class);
 	
@@ -19,10 +24,7 @@ public class CompletionCallback implements ExecutionCallback<ReaderResult>{
 	}
 
 	@Override
-	public void onResponse(ReaderResult arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+	public abstract void onResponse(ReaderResult readerResult);
 
 	
 }

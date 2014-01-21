@@ -7,7 +7,7 @@ import java.io.Serializable;
  * For distributed Reader jobs its important that subclasses are {@link Serializable}
  *
  */
-public abstract class ReaderJob implements Serializable {
+public abstract class ReaderJob<V> implements Serializable {
 
 	
 	private static final long serialVersionUID = 3937480396463424314L;
@@ -28,7 +28,7 @@ public abstract class ReaderJob implements Serializable {
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract RowReaderTask newTask() throws Exception;
+	public abstract RowReaderTask<V> newTask() throws Exception;
 	
-	
+	public abstract void processResult(V result);
 }

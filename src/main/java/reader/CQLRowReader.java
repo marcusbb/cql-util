@@ -34,18 +34,24 @@ public class CQLRowReader {
 	
 	//should remove this
 	public CQLRowReader() {
-		job = new ReaderJob() {
+		job = new ReaderJob<Void>() {
 			
 			@Override
 			public RowReaderTask<Void> newTask() throws Exception {
 				return new RowReaderTask<Void>() {
 
 					@Override
-					public void process(Row row) {
+					public Void process(Row row) {
 						logger.debug("Reading Row");
-						
+						return null;
 					}
 				};
+			}
+
+			@Override
+			public void processResult(Void result) {
+				
+				
 			}
 		};
 	}

@@ -6,6 +6,6 @@ import com.datastax.driver.core.Row;
 public interface RowReaderTask<V>  {
 
 	
-	public void process(Row row);
+	public V process(Row row);
 	
 }

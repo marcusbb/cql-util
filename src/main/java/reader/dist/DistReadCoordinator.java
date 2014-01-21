@@ -4,16 +4,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import reader.ReaderConfig;
 import reader.ReaderJob;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 
 //main coordination class
-//determine if it's master
 //split the tokens by number of cluster members
 //create new ReaderConfigs for each distributed run
 
@@ -28,12 +25,13 @@ public class DistReadCoordinator {
 		this.hz = hzInst;
 	}
 	/**
-	 * Executes a complete row execution distributed equally amongst the 
-	 * HZ members.
+	 * Executes a complete row execution distributed equally (or at least however the tokens are split)
+	 * amongst the HZ members.
 	 * 
 	 * @param execService
+	 * @return - a list of callback tasks
 	 */
-	public List<CompletionCallback> execute(String execName,ReaderJob job) {
+	public List<CompletionCallback> execute(String execName,DistReaderJob job) {
 		
 		IExecutorService execService = hz.getExecutorService(execName);
 		
@@ -42,7 +40,7 @@ public class DistReadCoordinator {
 		DistReaderConfig []configs = getReaderConfig();
 		List<CompletionCallback> callbackResults= new ArrayList<>();
 		for (int i=0;i<configs.length;i++) {
-			CompletionCallback callback = new CompletionCallback();
+			CompletionCallback callback = job.newCompletionCallBack();
 			callbackResults.add(callback);
 			execService.submitToMember(new DistReadTask(configs[i],job), configs[i].getTargetMember(),callback);
 		}

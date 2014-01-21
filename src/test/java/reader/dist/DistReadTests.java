@@ -51,7 +51,8 @@ public class DistReadTests {
 					tcpConf.setEnabled(true);
 					tcpConf.addMember("127.0.0.1");
 					conf.getNetworkConfig().getJoin().setTcpIpConfig(tcpConf);
-					conf.setProperty("hazelcast.wait.seconds.before.join", "0");
+					
+					conf.setProperty("hazelcast.wait.seconds.before.join", "1");
 					conf.setProperty("hazelcast.max.wait.seconds.before.join","1");
 					//conf.setProperty("hazelcast.initial.min.cluster.size",Integer.toString(num));
 					insts[index.getAndIncrement()] = Hazelcast.newHazelcastInstance(conf);
