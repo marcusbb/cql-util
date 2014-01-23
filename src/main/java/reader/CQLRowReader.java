@@ -282,8 +282,8 @@ public class CQLRowReader {
 				tokenPart.append(", ");
 
 		}
-		tokenPart.append("), ");
-		builder.append(tokenPart);
+		tokenPart.append(") ");
+		builder.append(tokenPart).append(", ");
 		
 		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
 			builder.append(colinfo.name).append(",");
