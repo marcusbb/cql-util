@@ -1,7 +1,9 @@
 package reader;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -98,6 +100,19 @@ public class ReaderConfig implements Serializable {
 		this.endToken = endToken;
 	}
 
+	public List<ColumnInfo> getPKColumns() {
+		ArrayList<ColumnInfo> allCols = new ArrayList<>();
+		if (pkConfig != null && pkConfig.getTokenPart() !=null)
+			for (ColumnInfo inf:pkConfig.getTokenPart()) {
+				allCols.add(inf);
+			}
+		if (pkConfig != null && pkConfig.getNonTokenPart() !=null)
+			for (ColumnInfo inf:pkConfig.getNonTokenPart()) {
+				allCols.add(inf);
+			}
+		
+		return allCols;
+	}
 	@Override
 	public String toString() {
 		return "ReaderConfig [cassConfig=" + cassConfig + ", keyspace="
