@@ -147,12 +147,15 @@ public class CQLRowReader {
 		//increment
 		while (more) {
 			String cql = generateWide(partKey, clusterKey, false,config.getPageSize());
+			logger.info("Excuting cql: {}", cql);
 			ResultSet rs = session.execute(cql);
 			List<Row> allRows = rs.all();
 			if (allRows.size() == 0)
 				more =false;
 			else {
 				for (Row row:allRows) {
+					totalReadCount++;
+					clusterKey = get(row,config.getPkConfig().getNonTokenPart()[0]);
 					try {
 						RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
 						rr.process(row);
@@ -160,10 +163,12 @@ public class CQLRowReader {
 						//we will be changing how tasks are instantiated
 						logger.error(e.getMessage(), e);
 					}
+					
 				}
-				
+				logger.info("Total: {}, partKey: Cur ClusterKey: {} ", totalReadCount,partKey, clusterKey);
 				
 			}
+			
 			
 		}
 		
