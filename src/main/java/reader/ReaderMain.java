@@ -39,7 +39,7 @@ public class ReaderMain {
 		
 		reader.read();
 		
-		cluster.shutdown();
+		reader.cluster.shutdown();
 		
 	}
 }
