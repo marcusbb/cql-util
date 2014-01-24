@@ -57,17 +57,20 @@ public class RegExSearchJob extends DistReaderJob<Composite> {
 		}
 		@Override
 		public Composite process(Row row) {
-			
+			Composite comp = null;
 			if (pattern.matcher(row.getString(colName)).matches() ) {
 				ArrayList<Object> compositeRow = new ArrayList<>();
 				for (int i=0;i<config.getPkConfig().getTokenPart().length;i++) {
 					//first part of the partition key or we'll error out
-					compositeRow.add(row.getString(config.getPkConfig().getTokenPart()[0].getName()));
+					compositeRow.add(row.getString(config.getPkConfig().getTokenPart()[i].getName()));
 					
+				}
+				if (!compositeRow.isEmpty()) {
+					comp = new Composite(compositeRow);
 				}
 				
 			}
-			return null;
+			return comp;
 		}
 		
 	}
