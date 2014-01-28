@@ -21,6 +21,9 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.QueryTimeoutException;
+import com.datastax.driver.core.exceptions.ReadTimeoutException;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
@@ -57,17 +60,18 @@ public class CQLRowReader {
 		//it's compared to a current page count to exclude duplicates from previous
 		//query
 		HashSet<Object> lastIdSet = new HashSet<Object>(pageSize);
+		ByteBuffer[] routeKey = null;
 		
 		while (more) {
 			
 			String cql = generateSelectPrefix(startToken,endToken) ;
 			SimpleStatement ss = new SimpleStatement( cql  );
-			ByteBuffer[] routeKey = CUtils.getBytesForRoute(startToken);
-			ss.setRoutingKey(routeKey);
-			logger.info("Executing cql: {} , routeKey: {} " ,cql, startToken);
 			
+			//ss.setRoutingKey(routeKey);
+			logger.info("Executing cql: {} , routeKey: {} " ,cql, startToken);
+			try {
 			ResultSet rs = session.execute(ss);
-
+			
 			Iterator<Row> iter = rs.iterator();
 			
 			//bail on empty result set
@@ -131,6 +135,19 @@ public class CQLRowReader {
 			}
 			lastIdSet = curIdSet;
 			logger.info("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
+			//Added a catch-all
+			//which will likely be caused by the session.execute above
+			}catch (ReadTimeoutException e) {
+				logger.error(e.getMessage(),e);
+				startToken++;
+			}catch (QueryTimeoutException e) {
+				logger.error(e.getMessage(),e);
+				startToken++;
+			}catch (NoHostAvailableException e) {
+				logger.error(e.getMessage(),e);
+				//not much I can do with this
+				throw e;
+			}
 		}
 		
 	}
@@ -188,8 +205,15 @@ public class CQLRowReader {
 		//return ret;
 		
 	}
-	//TODO: make sure we have the expanded set of items
-	private Object get(Row row,ColumnInfo info) {
+	private ByteBuffer[] getRouteKey(Row row) {
+		ArrayList<Object> objList = new ArrayList<>();
+		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+			objList.add(get(row,colinfo));			
+		}
+		return CUtils.getBytesForRoute(objList);
+		
+	}
+	public static Object get(Row row,ColumnInfo info) {
 		Object ret = null;
 		if (DataType.ascii().equals(info.type) )
 			ret = row.getString(info.name);
