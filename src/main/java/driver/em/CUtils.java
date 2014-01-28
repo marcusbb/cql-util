@@ -15,9 +15,13 @@ import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.LoggingRetryPolicy;
 import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+
+import driver.em.CassConfig.LoadBalancing;
 
 
 /**
@@ -102,11 +106,19 @@ public class CUtils {
         //socket options
         SocketOptions sockOpts = new SocketOptions();
         sockOpts.setTcpNoDelay(context.isTcpNoDelay());
+        //TODO: need to figure out balancing policy and retry policy from config
+        LoadBalancingPolicy lbPolicy = null;
+        if (context.loadBalancing == LoadBalancing.TOKEN_AWARE_DC_RR)
+        	lbPolicy = new TokenAwarePolicy(new DCAwareRoundRobinPolicy(context.getLocalDataCenterName()));
+        else if (context.loadBalancing == LoadBalancing.ROUND_ROBIN)
+        	lbPolicy = new RoundRobinPolicy();
+        else if (context.loadBalancing == LoadBalancing.TOKEN_AWARE_DC_RR)
+        	lbPolicy = new TokenAwarePolicy(new RoundRobinPolicy());
         
 		Cluster cluster = Cluster.builder()
 				  .addContactPoints(context.getContactHostsName())
 				  .withPort(context.getNativePort())
-				  .withLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy(context.getLocalDataCenterName())))
+				  .withLoadBalancingPolicy(lbPolicy)
 				  
 				  .withReconnectionPolicy(new ExponentialReconnectionPolicy(context.getBaseReconnectDelay(), context.getMaxReconnectDelay()))
 				  .withPoolingOptions(pools)
@@ -115,6 +127,7 @@ public class CUtils {
 				  //and can be handled on a per request basis
 				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
 				  
+					  
 				  //.withCredentials(context.getUserName(), context.getPassword())
 				  .build();
 		

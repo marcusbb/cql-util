@@ -12,7 +12,12 @@ public class CassConfig implements Serializable {
 
 	private static final long serialVersionUID = 4764982374610680602L;
 	
+	public enum LoadBalancing {
+		TOKEN_AWARE_DC_RR,
+		TOKEN_AWARE_RR,
+		ROUND_ROBIN;
 		
+	}
 	//Some reasonable testing defaults are supplied, tune for production
 	String [] contactHostsName = {"localhost","127.0.0.1"};
 	int nativePort = 9042;
@@ -35,6 +40,8 @@ public class CassConfig implements Serializable {
 	boolean tcpNoDelay = false;
 	int readTimeoutMs = 120000;
     
+	LoadBalancing loadBalancing = LoadBalancing.TOKEN_AWARE_DC_RR;
+	
     public String[] getContactHostsName() {
 		return contactHostsName;
 	}
@@ -130,6 +137,12 @@ public class CassConfig implements Serializable {
 	}
 	public void setMaxReconnectDelay(long maxReconnectDelay) {
 		this.maxReconnectDelay = maxReconnectDelay;
+	}
+	public LoadBalancing getLoadBalancing() {
+		return loadBalancing;
+	}
+	public void setLoadBalancing(LoadBalancing loadBalancing) {
+		this.loadBalancing = loadBalancing;
 	}
 	
 	
