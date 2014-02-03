@@ -76,4 +76,22 @@
 			</plugin>
 		</plugins>
 	</build>
+	<distributionManagement>
+	    <repository>
+	      <id>staging</id>
+	      <name>Rim Internal Releases</name>
+	      <url>http://upload-maven.rim.net/nexus/service/local/staging/deploy/maven2</url>
+	    </repository>
+	    <snapshotRepository>
+	      <id>ies-snapshots</id>
+	      <name>Rim Internal Snapshots</name>
+	      <url>http://upload-maven.rim.net/nexus/content/repositories/ies-snapshots</url>
+	    </snapshotRepository>
+	    <site>
+	      <id>site</id>
+	      <name>Rim Internal Site</name>
+	      <url>dav:http://upload-maven.rim.net/nexus/content/sites/rim-dev-site/ies</url>
+	    </site>
+	 </distributionManagement>
+	 
 </project>
