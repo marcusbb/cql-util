@@ -23,7 +23,7 @@ public abstract class ReaderJob<V> implements Serializable {
 	
 	
 	/**
-	 * Define a new task or pooled task - should be thread safe
+	 * Define a new task or pooled task 
 	 * 
 	 * @return
 	 * @throws Exception
