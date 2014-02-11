@@ -9,9 +9,19 @@
     </layout> 
   </appender> 
 
+	<appender name="file" class="org.apache.log4j.FileAppender">
+       
+        <param name="File" value="reader.log" />
+        <param name="Append" value="true" />
+                <layout class="org.apache.log4j.PatternLayout">
+            <param name="conversionPattern"
+            value="%d %-5p %c{1} - %m%n" />
+        </layout>
+
+    </appender>
   <root> 
-    <priority value ="debug" /> 
-    <appender-ref ref="console" /> 
+    <priority value ="info" /> 
+    <appender-ref ref="file" /> 
   </root>
   
 </log4j:configuration>
