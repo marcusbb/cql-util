@@ -124,13 +124,12 @@ public class CQLRowReader {
 			} 
 			//CHECK THAT WE HAVE A COMPLETE OVER-LAP COMPARED TO LAST READ
 			
-			if (curReadCount == 0 ) {
-				logger.info("No rows read at token {}" , startToken);
-				startToken++;
-			}
 			if (curReadCount == 0 && lastIdSet.containsAll(curIdSet)) {
 				logger.warn("Wide row detected: pageSize must be greater than the widest CF row for optimal reading");
 				readWide(row);
+				startToken++;
+			} else if (curReadCount == 0 ) {
+				logger.info("No rows read at token {}" , startToken);
 				startToken++;
 			}
 			lastIdSet = curIdSet;
