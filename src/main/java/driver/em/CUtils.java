@@ -4,8 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Cluster.Builder;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.HostDistance;
@@ -115,24 +115,22 @@ public class CUtils {
         else if (context.loadBalancing == LoadBalancing.TOKEN_AWARE_DC_RR)
         	lbPolicy = new TokenAwarePolicy(new RoundRobinPolicy());
         
-		Cluster cluster = Cluster.builder()
+        Builder builder = Cluster.builder()
 				  .addContactPoints(context.getContactHostsName())
 				  .withPort(context.getNativePort())
 				  .withLoadBalancingPolicy(lbPolicy)
-				  
 				  .withReconnectionPolicy(new ExponentialReconnectionPolicy(context.getBaseReconnectDelay(), context.getMaxReconnectDelay()))
 				  .withPoolingOptions(pools)
 				  .withSocketOptions(sockOpts)
 				  //The default is sufficient
 				  //and can be handled on a per request basis
-				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
-				  
-					  
-				  //.withCredentials(context.getUserName(), context.getPassword())
-				  .build();
-		
-		
-		return cluster;		
+				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE));
+      
+        if(context.getUsername() != null){
+        	builder.withCredentials(context.getUsername(), context.getPassword());
+		}
+      
+		return builder.build();		
 	}
 	
 	public static ByteBuffer[] getBytesForRoute(Object ...objs ) {

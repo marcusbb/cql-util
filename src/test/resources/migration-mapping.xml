@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mapping>
+	<jdbcUrl><![CDATA[jdbc:oracle:thin:@dbprv59yyz.labyyz.testnet.rim.net:1523:Vostok]]></jdbcUrl>
+	<jdbcDriver>oracle.jdbc.driver.OracleDriver</jdbcDriver>
+	<jdbcUsername>DV_ICRS15</jdbcUsername>
+	<jdbcPassword>cardhu</jdbcPassword>
+	<cqlTable>last_auth_activity</cqlTable>
+	<sqlQuery><![CDATA[
+	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'DDD') as last_auth_activity 
+	FROM subscriber_devices sd, devices d 
+	WHERE sd.device_id = d.device_id AND sd.status_code = 'A'
+	]]></sqlQuery>
+	<!-- Timestamp key is truncated per date at midnight -->
+	<!-- 
+	<sqlQuery><![CDATA[
+	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'DDD') as last_auth_activity 
+	FROM subscriber_devices sd, devices d 
+	WHERE sd.device_id = d.device_id AND sd.status_code = 'A'
+	]]></sqlQuery>
+	//-->
+	<!-- Timestamp key is truncated per hour -->
+	<!-- 
+	<sqlQuery><![CDATA[
+	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'HH24') as last_auth_activity 
+	FROM subscriber_devices sd, devices d 
+	WHERE sd.device_id = d.device_id AND sd.status_code = 'A'
+	]]></sqlQuery>
+	//-->
+	<cassConfig>
+		<contactHostsName>cass-001-vmyyz.labyyz.testnet.rim.net</contactHostsName>
+		<localDataCenterName>DC1</localDataCenterName>
+		<nativePort>1523</nativePort>
+		<username>cassandra</username>
+		<password>cassandra</password>
+		
+		<baseReconnectDelay>60000</baseReconnectDelay>
+		<concurrentLocal>100</concurrentLocal>
+		<concurrentRemote>100</concurrentRemote>
+		<connectionTimeoutMs>5000</connectionTimeoutMs>
+		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
+		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
+		<keepAlive>true</keepAlive>
+		<maxConnectionsPerLocalHost>2</maxConnectionsPerLocalHost>
+		<maxConnectionsPerRemoteHost>2</maxConnectionsPerRemoteHost>
+		<maxReconnectDelay>600000</maxReconnectDelay>
+		<readTimeoutMs>120000</readTimeoutMs>
+		<soLinger>5000</soLinger>
+		<tcpNoDelay>false</tcpNoDelay>
+	</cassConfig>
+	<forEach>
+		<rsToCqlConfig>
+			<keyspace>diana_nr</keyspace>
+			<cqlTable>last_auth_activity</cqlTable>
+			<columns>
+				<column>
+					<jdbcName>last_auth_activity</jdbcName>
+					<cqlName>auth_ts</cqlName>
+					<isPK>true</isPK>
+					<type>TIMESTAMP</type>
+				</column>
+				<column>
+					<jdbcName>device_query_identifier</jdbcName>
+					<cqlName>device_id</cqlName>
+					<isPK>false</isPK>
+					<type>TEXT</type>
+				</column>
+			</columns>
+		</rsToCqlConfig>
+	</forEach>
+</mapping>

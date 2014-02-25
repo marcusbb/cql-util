@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>cass.driver</groupId>
 	<artifactId>driver-util</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>0.2-SNAPSHOT</version>
 	<properties>
 		<!--  Skipping tests for now which aren't stand alone runnable-->
 		<skipTests>true</skipTests>
@@ -40,6 +40,12 @@
 		    <artifactId>junit</artifactId>
 		    <version>4.10</version>
 		    <scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc6</artifactId>
+			<version>11.2.0.3</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	

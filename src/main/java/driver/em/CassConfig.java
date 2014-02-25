@@ -1,6 +1,7 @@
 package driver.em;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 
 /**
@@ -22,6 +23,8 @@ public class CassConfig implements Serializable {
 	String [] contactHostsName = {"localhost","127.0.0.1"};
 	int nativePort = 9042;
 	String localDataCenterName = "datacenter1";
+	String username;
+	String password;
 	
 	//concurrency (per connection)
 	int concurrentLocal = 100 ,concurrentRemote = 100;
@@ -145,5 +148,42 @@ public class CassConfig implements Serializable {
 		this.loadBalancing = loadBalancing;
 	}
 	
+	public String getUsername() {
+		return username;
+	}
 	
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	
+	public String getPassword() {
+		return password;
+	}
+	
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+	@Override
+	public String toString() {
+		return "CassConfig [contactHostsName="
+				+ Arrays.toString(contactHostsName) + ", nativePort="
+				+ nativePort + ", localDataCenterName=" + localDataCenterName
+				+ ", username=" + username
+				+ ", concurrentLocal=" + concurrentLocal
+				+ ", concurrentRemote=" + concurrentRemote
+				+ ", coreConnectionsPerLocalHost="
+				+ coreConnectionsPerLocalHost + ", maxConnectionsPerLocalHost="
+				+ maxConnectionsPerLocalHost
+				+ ", coreConnectionsPerRemoteHost="
+				+ coreConnectionsPerRemoteHost
+				+ ", maxConnectionsPerRemoteHost="
+				+ maxConnectionsPerRemoteHost + ", baseReconnectDelay="
+				+ baseReconnectDelay + ", maxReconnectDelay="
+				+ maxReconnectDelay + ", connectionTimeoutMs="
+				+ connectionTimeoutMs + ", keepAlive=" + keepAlive
+				+ ", soLinger=" + soLinger + ", tcpNoDelay=" + tcpNoDelay
+				+ ", readTimeoutMs=" + readTimeoutMs + ", loadBalancing="
+				+ loadBalancing + "]";
+	}
 }

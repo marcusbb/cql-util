@@ -9,6 +9,8 @@ public class RSToCqlConfig {
 
 	private String cqlTable;
 	
+	private String keyspace;
+	
 	private List<JdbcColMapping> columns;
 
 	//If these are available then 
@@ -58,6 +60,18 @@ public class RSToCqlConfig {
 		this.cqlTable = cqlTable;
 	}
 
-	
+	public String getKeyspace() {
+		return keyspace;
+	}
 
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
+	}
+	
+	@Override
+	public String toString() {
+		return "RSToCqlConfig [cqlTable=" + cqlTable + ", keyspace=" + keyspace
+				+ ", columns=" + columns + ", nameMapping=" + nameMapping
+				+ ", valueMapping=" + valueMapping + "]";
+	}
 }

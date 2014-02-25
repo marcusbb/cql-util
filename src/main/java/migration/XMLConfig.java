@@ -7,18 +7,26 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import driver.em.CassConfig;
+
 @XmlRootElement(name="mapping")
 public class XMLConfig {
 
 	private String jdbcUrl;
 	
+	private String jdbcUsername;
+	
+	private String jdbcPassword;
+	
 	private String jdbcDriver;
 	
 	private String sqlQuery;
 	
-
-	List<RSToCqlConfig> rsToCqlConfigs = new ArrayList<>();
+	private String keyspace;
 	
+	private CassConfig cassConfig;
+	
+	List<RSToCqlConfig> rsToCqlConfigs = new ArrayList<>();
 	
 	public String getSqlQuery() {
 		return sqlQuery;
@@ -28,7 +36,14 @@ public class XMLConfig {
 		this.sqlQuery = sqlQuery;
 	}
 
-	
+	public CassConfig getCassConfig() {
+		return cassConfig;
+	}
+
+	public void setCassConfig(CassConfig cassConfig) {
+		this.cassConfig = cassConfig;
+	}
+
 	//This is the list of columns
 	@XmlElement( name="rsToCqlConfig" )
 	@XmlElementWrapper( name="forEach" )
@@ -52,6 +67,22 @@ public class XMLConfig {
 		this.jdbcUrl = jdbcUrl;
 	}
 
+	public String getJdbcUsername() {
+		return jdbcUsername;
+	}
+
+	public void setJdbcUsername(String jdbcUsername) {
+		this.jdbcUsername = jdbcUsername;
+	}
+
+	public String getJdbcPassword() {
+		return jdbcPassword;
+	}
+
+	public void setJdbcPassword(String jdbcPassword) {
+		this.jdbcPassword = jdbcPassword;
+	}
+
 	public String getJdbcDriver() {
 		return jdbcDriver;
 	}
@@ -59,6 +90,21 @@ public class XMLConfig {
 	public void setJdbcDriver(String jdbcDriver) {
 		this.jdbcDriver = jdbcDriver;
 	}
-	
-	
+
+	public String getKeyspace() {
+		return keyspace;
+	}
+
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
+	}
+
+	@Override
+	public String toString() {
+		return "XMLConfig [jdbcUrl=" + jdbcUrl + ", jdbcUsername="
+				+ jdbcUsername + ", jdbcDriver=" + jdbcDriver + ", sqlQuery="
+				+ sqlQuery + ", keyspace=" + keyspace + ", cassConfig="
+				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs + "]";
+	}
+
 }

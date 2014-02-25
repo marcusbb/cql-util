@@ -18,49 +18,49 @@ public class RowToCql {
 	
 	public String cqlTable;
 	
+	public String keyspace;
+	
 	public RowToCql(ResultSet rs,String cqlTable,JdbcColMapping []mapping) {
 		this.rs = rs;
 		this.cqlTable = cqlTable;
 		this.colMapping = mapping;
 	}
 	
+	public RowToCql(ResultSet rs, String cqlTable,JdbcColMapping []mapping, String keyspace) {
+		this.rs = rs;
+		this.cqlTable = cqlTable;
+		this.colMapping = mapping;
+		this.keyspace = keyspace;
+	}
+	
 	public String getCQL() throws SQLException {
 		
-		StringBuilder builder = new StringBuilder("UPDATE ").append(cqlTable);
+		StringBuilder columnsBuilder = new StringBuilder();
+		StringBuilder valuesBuilder = new StringBuilder();
 		
-		
-		builder.append(" SET ");
 		//TODO: exclude columns not in the resultset: rs
 		for (JdbcColMapping mapping: colMapping) {
-			if (!mapping.isPK) {
-				builder.append(mapping.cqlName).append(eqParam);
-				builder.append(space);
-				builder.append(comma).append(space);
-			}
+			columnsBuilder.append(mapping.cqlName).append(comma).append(space);
+			valuesBuilder.append(ques).append(comma).append(space);
 		}
-		builder.replace(builder.length()-3, builder.length()-1, "");
-		builder.append(getIdPredicate());
-		//remove trailing "and"
-		//builder.replace(builder.length()-4, builder.length()-1, "");
-				
+		
+		columnsBuilder.delete(columnsBuilder.lastIndexOf(","), columnsBuilder.length());
+		valuesBuilder.delete(valuesBuilder.lastIndexOf(","), valuesBuilder.length());
+		
+		StringBuilder builder = new StringBuilder("INSERT INTO ").append(cqlTable)
+		.append(" ( ").append(columnsBuilder).append(" ) ")
+		.append(" VALUES ( ").append(valuesBuilder).append(" ) ");
+		
 		return builder.toString();
 	}
 	
 	public Object[] values() throws SQLException {
 		List<Object> values = new ArrayList<>();
-		List<JdbcColMapping> pkList = new ArrayList<>();
-		//regular columns
+		
 		for (JdbcColMapping mapping: colMapping) {
-			if (!mapping.isPK) {
-				values.add(getValue(mapping));
-			}else {
-				pkList.add(mapping);
-			}
+				values.add(getValue(mapping));	
 		}
-		//iterate over pk columns
-		for (JdbcColMapping pk: pkList) {
-			values.add( getValue(pk) );
-		}
+		
 		return values.toArray();
 	}
 	
@@ -103,7 +103,14 @@ public class RowToCql {
 		return builder.toString();
 	}
 	
-	
+	public String getKeyspace() {
+		return keyspace;
+	}
+
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
+	}
+
 	public SimpleStatement getStatement() throws SQLException {
 		
 		SimpleStatement ss = new SimpleStatement(getCQL(),values());
