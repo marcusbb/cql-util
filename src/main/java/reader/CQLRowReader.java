@@ -64,6 +64,13 @@ public class CQLRowReader {
 				
 				
 			}
+
+			@Override
+			public void onReadComplete() {
+				// TODO Auto-generated method stub
+				
+			}
+			
 		};
 	}
 	public CQLRowReader(ReaderJob job) {
@@ -188,6 +195,8 @@ public class CQLRowReader {
 				throw e;
 			}
 		}
+		//done while more
+		job.onReadComplete();
 		
 	}
 	//The pageSize is less than the size of the row, so we must 

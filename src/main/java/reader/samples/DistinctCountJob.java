@@ -83,4 +83,10 @@ public class DistinctCountJob extends ReaderJob<Object> {
 		
 	}
 
+	@Override
+	public void onReadComplete() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

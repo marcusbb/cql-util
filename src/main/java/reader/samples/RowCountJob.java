@@ -1,6 +1,9 @@
-package reader;
+package reader.samples;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import reader.ReaderJob;
+import reader.RowReaderTask;
 
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ColumnMetadata;
@@ -35,6 +38,12 @@ public class RowCountJob extends ReaderJob<Void> {
 
 	@Override
 	public void processResult(Void result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onReadComplete() {
 		// TODO Auto-generated method stub
 		
 	}

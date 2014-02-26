@@ -92,6 +92,14 @@ public class RegExSearchJob extends DistReaderJob<Composite> {
 		
 		
 	}
+
+
+
+	@Override
+	public void onReadComplete() {
+		// TODO Auto-generated method stub
+		
+	}
 	
 
 	

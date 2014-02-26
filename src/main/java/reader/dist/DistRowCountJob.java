@@ -80,6 +80,15 @@ public class DistRowCountJob extends DistReaderJob<Void> {
 		
 	}
 
+
+
+
+	@Override
+	public void onReadComplete() {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 
 }

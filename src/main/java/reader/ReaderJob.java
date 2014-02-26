@@ -31,4 +31,9 @@ public abstract class ReaderJob<V> implements Serializable {
 	public abstract RowReaderTask<V> newTask() throws Exception;
 	
 	public abstract void processResult(V result);
+	
+	/**
+	 * The read job is complete
+	 */
+	public abstract void onReadComplete();
 }

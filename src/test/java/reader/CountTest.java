@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import reader.samples.RowCountJob;
+
 import driver.em.CassConfig;
 
 public class CountTest {

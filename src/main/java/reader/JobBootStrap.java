@@ -2,6 +2,7 @@ package reader;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -86,13 +87,7 @@ public abstract class JobBootStrap {
 		}
 
 		
-		//hack util we have proper reporting and job handling
-		/*RowReaderTask<?> rowReader = (RowReaderTask<?>)Class.forName( reader.config.getReaderTask() ).newInstance();
-		if (rowReader instanceof LargeRowsTask) {
-			LargeRowsTask task = (LargeRowsTask)rowReader;
-			task.printAll();
-		}*/
-		//end hack
+		
 		logger.info("Shutting down cluster");
 		reader.cluster.shutdown();
 	}

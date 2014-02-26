@@ -62,5 +62,10 @@ public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 		}
 		
 	}
+	@Override
+	public void onReadComplete() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }
