@@ -28,6 +28,8 @@ public class XMLConfig {
 	
 	List<RSToCqlConfig> rsToCqlConfigs = new ArrayList<>();
 	
+	boolean asyncWrites;
+	
 	public String getSqlQuery() {
 		return sqlQuery;
 	}
@@ -99,12 +101,20 @@ public class XMLConfig {
 		this.keyspace = keyspace;
 	}
 
+	public boolean isAsyncWrites() {
+		return asyncWrites;
+	}
+
+	public void setAsyncWrites(boolean asyncWrites) {
+		this.asyncWrites = asyncWrites;
+	}
+
 	@Override
 	public String toString() {
 		return "XMLConfig [jdbcUrl=" + jdbcUrl + ", jdbcUsername="
 				+ jdbcUsername + ", jdbcDriver=" + jdbcDriver + ", sqlQuery="
 				+ sqlQuery + ", keyspace=" + keyspace + ", cassConfig="
-				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs + "]";
+				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs
+				+ ", asyncWrites=" + asyncWrites + "]";
 	}
-
 }

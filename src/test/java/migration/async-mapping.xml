@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<mapping>
+<mapping>  
 	<jdbcUrl><![CDATA[jdbc:oracle:thin:@dbprv59yyz.labyyz.testnet.rim.net:1523:Vostok]]></jdbcUrl>
 	<jdbcDriver>oracle.jdbc.driver.OracleDriver</jdbcDriver>
 	<jdbcUsername>DV_ICRS15</jdbcUsername>
 	<jdbcPassword>cardhu</jdbcPassword>
 	<cqlTable>last_auth_activity</cqlTable>
+	<asyncWrites>true</asyncWrites>
 	<sqlQuery><![CDATA[
 	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'DDD') as last_auth_activity 
 	FROM subscriber_devices sd, devices d 

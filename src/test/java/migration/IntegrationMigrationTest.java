@@ -14,4 +14,13 @@ public class IntegrationMigrationTest {
 	    Main main = new Main(fileName);
 		main.execute();
 	}
+	
+	@Ignore
+	@Test
+	public void testMigrationAsyncWrites() throws Exception {
+		  
+		String fileName = "migration/async-mapping.xml";
+	    Main main = new Main(fileName);
+		main.execute();
+	}
 }

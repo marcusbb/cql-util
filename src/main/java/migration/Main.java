@@ -42,11 +42,13 @@ public class Main {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		XMLConfig config = (XMLConfig)unmarshaller.unmarshal(ins);
 		
-		Cluster cluster = CUtils.createCluster(config.getCassConfig());
+		Cluster cluster = null;
+		
+		Map<String, Session> sessions = new HashMap<String, Session>();
 		
 		try{
-			Map<String, Session> sessions = new HashMap<String, Session>();
 			
+			cluster = CUtils.createCluster(config.getCassConfig());
 			if(config.getKeyspace() != null){
 				sessions.put(RSExecutor.DEFAULT_KEY, CUtils.createSession(cluster, config.getKeyspace()));
 			}
@@ -62,7 +64,11 @@ public class Main {
 			RSExecutor executor = new RSExecutor(config, sessions);
 			executor.execute();
 			
+		}
+		catch(Exception e){
+			logger.error("Exception in Main: " + e.getMessage(), e);
 		}finally{
+		
 			if(cluster != null){
 				logger.info("Shutting down the Cluster");
 				boolean isShutdown = cluster.shutdown(300000, TimeUnit.MILLISECONDS);

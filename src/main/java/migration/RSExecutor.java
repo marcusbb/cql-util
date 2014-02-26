@@ -6,21 +6,39 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 
+import driver.em.SimpleStatement;
+
 public class RSExecutor {
-    
+   
 	protected Map<String, Session> sessions;
 	static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
 	public static String DEFAULT_KEY = "default";
 	XMLConfig config;
+	
+	private static long defaultKeepAlive = 60; 
+	private static TimeUnit defaultKeepAliveTU = TimeUnit.SECONDS;
+	private static int defaultQueueCapacity = 1000;
+	private static int corePoolSize = 5;
+	private static int maxPoolSize = 10;
 	
 	public RSExecutor(XMLConfig config, Session session) {
 		this.config = config;
@@ -41,6 +59,20 @@ public class RSExecutor {
 		return DriverManager.getConnection( config.getJdbcUrl(), config.getJdbcUsername(), config.getJdbcPassword());
 	}
 	
+	List<RowToCql> getOperationStatements(ResultSet rs){
+		List<RowToCql> operationStatements = new ArrayList<>();
+		//build the Row and RowtoMap
+		for (RSToCqlConfig cqlConfig:config.rsToCqlConfigs) {
+			RowToCql rowToCql = null;
+			if (cqlConfig.getNameMapping() != null)
+				rowToCql = new RowToCqlMap(rs, cqlConfig.getCqlTable(), cqlConfig.getColumns().toArray(new JdbcColMapping[]{}),cqlConfig.getNameMapping(),cqlConfig.getValueMapping(), cqlConfig.getKeyspace());
+			else
+				rowToCql = new RowToCql(rs, cqlConfig.getCqlTable(), cqlConfig.getColumns().toArray(new JdbcColMapping[]{}), cqlConfig.getKeyspace() );
+			operationStatements.add(rowToCql);
+		}
+		return operationStatements;
+	}
+	
 	public void execute() throws SQLException, ClassNotFoundException {
 		Connection conn = null;
 		Statement stmt = null;
@@ -50,39 +82,51 @@ public class RSExecutor {
 			conn = getJdbcConnection();
 			
 			stmt = conn.createStatement(
-					ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+					ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			
 			long startExec = System.currentTimeMillis();
 			rs = stmt.executeQuery(config.getSqlQuery());
 			long endExec = System.currentTimeMillis();
 			long elapsed = endExec-startExec;
 
-			System.out.println("Completed SQL execution: " + config.getSqlQuery() + " in (MS)" +elapsed );
 			logger.info("Completed SQL execution: " + config.getSqlQuery() + " in (MS)" +elapsed );
 
-			List<RowToCql> operationStatements = new ArrayList<>();
 			//build the Row and RowtoMap
-			for (RSToCqlConfig cqlConfig:config.rsToCqlConfigs) {
-				RowToCql rowToCql = null;
-				if (cqlConfig.getNameMapping() != null)
-					rowToCql = new RowToCqlMap(rs, cqlConfig.getCqlTable(), cqlConfig.getColumns().toArray(new JdbcColMapping[]{}),cqlConfig.getNameMapping(),cqlConfig.getValueMapping(), cqlConfig.getKeyspace());
-				else
-					rowToCql = new RowToCql(rs, cqlConfig.getCqlTable(), cqlConfig.getColumns().toArray(new JdbcColMapping[]{}), cqlConfig.getKeyspace() );
-				operationStatements.add(rowToCql);
-			}
+			List<RowToCql> operationStatements = getOperationStatements(rs);
+			
 			//TODO replace this with a JMX metric.
 			int count = 0;
+			
+			ThreadPoolExecutor exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
 			while (rs.next()) {
-
 				try {
-					if (count++ % 1000 == 0)
-						System.out.println("completed: " + count);
+					if (count++ % 1000 == 0){
+						logger.info("completed: " + count);
+					}
 
 					for (RowToCql row: operationStatements) {
 						Session session = (row.getKeyspace() != null)?sessions.get(row.getKeyspace()):sessions.get(DEFAULT_KEY);
-						session.execute(
-								row.getStatement().buildQueryString()
-								);
+						if(config.asyncWrites){
+							final String queryString = row.getStatement().buildQueryString();
+							final ResultSetFuture future = session.executeAsync(queryString);
+							future.addListener( new Runnable(){
+								@Override
+								public void run() {
+									try {
+										future.get();
+									} catch (InterruptedException e) {
+										logger.error("InterruptedException: " + e.getMessage() + "; " + queryString);
+									} catch (ExecutionException e) {
+										logger.error("ExecutionException: " + e.getMessage() + "; " + queryString);
+									}
+								}
+								
+							}, exec);
+						}else{
+							session.execute(
+									row.getStatement().buildQueryString()
+									);
+						}
 					}
 
 				}catch (Exception e) {
@@ -90,13 +134,14 @@ public class RSExecutor {
 					logger.error("Exception writing to cassandra: " + e.getMessage(), e);
 				}
 			}
+			
 		}finally{
 			close(rs);
 			close(stmt);
 			close(conn);
 		}
 	}
-	
+
 	public void close(ResultSet rs){
 		if(rs != null){
 			try {
