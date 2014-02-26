@@ -10,6 +10,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 
+import reader.PKConfig.ColumnInfo;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ResultSet;

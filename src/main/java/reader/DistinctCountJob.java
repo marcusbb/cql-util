@@ -3,6 +3,13 @@ package reader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datastax.driver.core.Row;
+
+import reader.PKConfig.ColumnInfo;
+
 public class DistinctCountJob extends ReaderJob<Object> {
 
 	/**
@@ -20,6 +27,29 @@ public class DistinctCountJob extends ReaderJob<Object> {
 	@Override
 	public RowReaderTask<Object> newTask() throws Exception {
 		return new LargeRowsTask(colName,threshold);
+	}
+
+	public class LargeRowsTask implements RowReaderTask<Object>{
+
+		
+		final PKConfig.ColumnInfo colToCount;
+		final int threshold;
+		
+		public LargeRowsTask(ColumnInfo colToCount,int threshold) {
+			this.colToCount = colToCount;
+			this.threshold = threshold;
+		}
+		@Override
+		public Object process(Row row) {
+			
+			Object colObj = CQLRowReader.get(row, colToCount);//row.getString(colToCount);
+			
+			
+			return colObj;
+			
+			
+		}
+
 	}
 
 	@Override
