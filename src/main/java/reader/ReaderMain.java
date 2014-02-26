@@ -12,7 +12,11 @@ import com.datastax.driver.core.Cluster;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
-
+/**
+ * 
+ * @deprecated
+ *
+ */
 public class ReaderMain {
 
 	static Cluster cluster = null;
