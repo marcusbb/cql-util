@@ -1,4 +1,4 @@
-package reader;
+package reader.samples;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,6 +8,12 @@ import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Row;
 
+import reader.CQLRowReader;
+import reader.JobBootStrap;
+import reader.PKConfig;
+import reader.ReaderConfig;
+import reader.ReaderJob;
+import reader.RowReaderTask;
 import reader.PKConfig.ColumnInfo;
 
 public class DistinctCountJob extends ReaderJob<Object> {
@@ -56,6 +62,21 @@ public class DistinctCountJob extends ReaderJob<Object> {
 	public void processResult(Object obj) {
 		if (rowCount.putIfAbsent(obj, new AtomicInteger(1)) != null) {
 			rowCount.get(obj).getAndIncrement();
+		}
+		
+	}
+	
+	public static class DistinctCountBatchJob extends JobBootStrap {
+
+		final ColumnInfo colName;
+		final Integer threshold;
+		public DistinctCountBatchJob(ColumnInfo colName,Integer threshold) {
+			this.colName = colName;
+			this.threshold = threshold;
+		}
+		@Override
+		public ReaderJob<?> initJob(ReaderConfig readerConfig) {
+			return new DistinctCountJob(colName, threshold);
 		}
 		
 	}
