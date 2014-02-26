@@ -56,6 +56,8 @@ public abstract class JobBootStrap {
 			System.exit(1);
 		} 
 		CQLRowReader reader = new CQLRowReader(config,initJob(config));
+		
+		//Not sure the dynamic configuration works yet
 		List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
 		List<ColumnMetadata> colClusMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
 		
