@@ -30,11 +30,41 @@ public class ReaderConfig implements Serializable {
 	//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
 	private int pageSize = 1000;
 	
+	//For a single job configuration
 	private Long startToken = Long.MIN_VALUE;
 	
 	private Long endToken = Long.MAX_VALUE;
 	
+	//this is for multi-threaded read
+	private int numThreads = -1;
 	
+	private TokenRange []tokenRanges;
+	
+	public static class TokenRange {
+		
+		private Long startToken = Long.MIN_VALUE;
+		
+		private Long endToken = Long.MAX_VALUE;
+
+		public Long getStartToken() {
+			return startToken;
+		}
+
+		public void setStartToken(Long startToken) {
+			this.startToken = startToken;
+		}
+
+		public Long getEndToken() {
+			return endToken;
+		}
+
+		public void setEndToken(Long endToken) {
+			this.endToken = endToken;
+		}
+		
+		
+	}
+	//end multi-threaded config
 	
 	public CassConfig getCassConfig() {
 		return cassConfig;
@@ -115,6 +145,23 @@ public class ReaderConfig implements Serializable {
 		
 		return allCols;
 	}
+	
+	public int getNumThreads() {
+		return numThreads;
+	}
+
+	public void setNumThreads(int numThreads) {
+		this.numThreads = numThreads;
+	}
+
+	public TokenRange[] getTokenRanges() {
+		return tokenRanges;
+	}
+
+	public void setTokenRanges(TokenRange[] tokenRanges) {
+		this.tokenRanges = tokenRanges;
+	}
+
 	@Override
 	public String toString() {
 		return "ReaderConfig [cassConfig=" + cassConfig + ", keyspace="

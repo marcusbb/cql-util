@@ -88,19 +88,25 @@ public class CQLRowReader {
 		this.session = cluster.connect(config.getKeyspace());
 		this.job = job;
 	}
-	
+	/**
+	 * Read from the configured start and end
+	 */
 	public void read() {
-		boolean more = true;
-		
-		//start at the beginning of the token range.
 		Long startToken = config.getStartToken();
 		
 		Long endToken = config.getEndToken();
 		
+		read(startToken,endToken);
+	}
+	
+	public void read(final Long startOfToken,final Long endToken) {
+		boolean more = true;
 		
+		//start at the beginning of the token range.
+						
 		int pageSize = config.getPageSize();
 		
-			
+		long startToken = startOfToken;
 		
 		//HashSet container to keep track of all of items in the last fetch
 		//it's compared to a current page count to exclude duplicates from previous
@@ -196,7 +202,7 @@ public class CQLRowReader {
 			}
 		}
 		//done while more
-		job.onReadComplete();
+		//job.onReadComplete();
 		
 	}
 	//The pageSize is less than the size of the row, so we must 

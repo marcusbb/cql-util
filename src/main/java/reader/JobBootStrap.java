@@ -23,6 +23,7 @@ public abstract class JobBootStrap {
 	
 	protected CQLRowReader reader = null;
 	protected ReaderConfig config;
+	protected ReaderJob<?> job;
 	
 	/**
 	 * Should only be called once, can add checking but 
@@ -55,10 +56,11 @@ public abstract class JobBootStrap {
 			logger.error("Unrecoverable error reading configuration, please make sure reader-config.xml is valid and readable");
 			System.exit(1);
 		} 
-		CQLRowReader reader = new CQLRowReader(config,initJob(config));
+		job = initJob(config);
+		CQLRowReader reader = new CQLRowReader(config,job);
 		
 		//Not sure the dynamic configuration works yet
-		List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
+		/*List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
 		List<ColumnMetadata> colClusMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
 		
 		ColumnInfo []partitionCols = new ColumnInfo[colMeta.size()];
@@ -73,7 +75,7 @@ public abstract class JobBootStrap {
 			clusterCols[i++] = new ColumnInfo(col);
 		}
 		config.getPkConfig().setPartitionKeys(partitionCols);
-		config.getPkConfig().setClusterKeys(clusterCols);
+		config.getPkConfig().setClusterKeys(clusterCols);*/
 		
 		if (startToken!=null)
 			reader.config.setStartToken(Long.parseLong(startToken));
@@ -82,18 +84,21 @@ public abstract class JobBootStrap {
 		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
 		reader.session = reader.cluster.connect(reader.config.getKeyspace());
 
+	}
+	
+	public void runJob() {
+
 		try {
 			reader.read();
 		}catch (Exception e) {
 			logger.error(e.getMessage(),e);
 		}
-
 		
+		job.onReadComplete();
 		
 		logger.info("Shutting down cluster");
 		reader.cluster.shutdown();
 	}
-	
 	
 	/**
 	 * Give me your job
