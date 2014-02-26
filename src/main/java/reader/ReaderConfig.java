@@ -104,12 +104,12 @@ public class ReaderConfig implements Serializable {
 
 	public List<ColumnInfo> getPKColumns() {
 		ArrayList<ColumnInfo> allCols = new ArrayList<>();
-		if (pkConfig != null && pkConfig.getTokenPart() !=null)
-			for (ColumnInfo inf:pkConfig.getTokenPart()) {
+		if (pkConfig != null && pkConfig.getPartitionKeys() !=null)
+			for (ColumnInfo inf:pkConfig.getPartitionKeys()) {
 				allCols.add(inf);
 			}
-		if (pkConfig != null && pkConfig.getNonTokenPart() !=null)
-			for (ColumnInfo inf:pkConfig.getNonTokenPart()) {
+		if (pkConfig != null && pkConfig.getClusterKeys() !=null)
+			for (ColumnInfo inf:pkConfig.getClusterKeys()) {
 				allCols.add(inf);
 			}
 		

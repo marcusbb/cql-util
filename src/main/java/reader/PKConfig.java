@@ -5,10 +5,10 @@ package reader;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import com.datastax.driver.core.ColumnMetadata;
 import com.datastax.driver.core.DataType;
 
 import driver.em.CUtils;
-import driver.em.Composite;
 
 /**
  *  
@@ -22,11 +22,16 @@ public class PKConfig {
 
 	//currently token can only have one part
 	//rename this to paritionKeys - as a limit of 1 at the moment due to CQL issue
-	private ColumnInfo[] tokenPart;
+	private ColumnInfo[] partitionKeys;
 	//rename to clusterKeys
-	private ColumnInfo[] nonTokenPart;
-	
+	private ColumnInfo[] clusterKeys;
+	//may not not be needed as an XML config object
 	public static class ColumnInfo {
+		
+		public ColumnInfo(ColumnMetadata metaData) {
+			this.name =metaData.getName();
+			this.type = metaData.getType();
+		}
 		public ColumnInfo() {}
 		public ColumnInfo(String name,DataType type) {
 			this.name = name;
@@ -55,26 +60,26 @@ public class PKConfig {
 		
 	}
 	public PKConfig(ColumnInfo []tokenPart,ColumnInfo []nontokenPart) {
-		this.tokenPart = tokenPart;
-		this.nonTokenPart = nontokenPart;
+		this.partitionKeys = tokenPart;
+		this.clusterKeys = nontokenPart;
 	}
-	public ColumnInfo[] getTokenPart() {
-		return tokenPart;
-	}
-
-
-	public void setTokenPart(ColumnInfo[] tokenPart) {
-		this.tokenPart = tokenPart;
+	public ColumnInfo[] getPartitionKeys() {
+		return partitionKeys;
 	}
 
 
-	public ColumnInfo[] getNonTokenPart() {
-		return nonTokenPart;
+	public void setPartitionKeys(ColumnInfo[] tokenPart) {
+		this.partitionKeys = tokenPart;
 	}
 
 
-	public void setNonTokenPart(ColumnInfo[] nonTokenPart) {
-		this.nonTokenPart = nonTokenPart;
+	public ColumnInfo[] getClusterKeys() {
+		return clusterKeys;
+	}
+
+
+	public void setClusterKeys(ColumnInfo[] nonTokenPart) {
+		this.clusterKeys = nonTokenPart;
 	}
 	
 	

@@ -62,9 +62,9 @@ public class RegExSearchJob extends DistReaderJob<Composite> {
 			Composite comp = null;
 			if (pattern.matcher(row.getString(colName)).matches() ) {
 				ArrayList<Object> compositeRow = new ArrayList<>();
-				for (int i=0;i<config.getPkConfig().getTokenPart().length;i++) {
+				for (int i=0;i<config.getPkConfig().getPartitionKeys().length;i++) {
 					//first part of the partition key or we'll error out
-					compositeRow.add(row.getString(config.getPkConfig().getTokenPart()[i].getName()));
+					compositeRow.add(row.getString(config.getPkConfig().getPartitionKeys()[i].getName()));
 					
 				}
 				if (!compositeRow.isEmpty()) {

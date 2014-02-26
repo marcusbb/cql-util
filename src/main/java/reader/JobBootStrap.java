@@ -1,6 +1,7 @@
 package reader;
 
 import java.io.InputStream;
+import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -8,6 +9,10 @@ import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import reader.PKConfig.ColumnInfo;
+
+import com.datastax.driver.core.ColumnMetadata;
 
 import driver.em.CUtils;
 
@@ -38,6 +43,8 @@ public abstract class JobBootStrap {
 			InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFile);
 			
 			config = (ReaderConfig)unmarshaller.unmarshal(ins);
+			//discover the pk information:
+			
 		}catch (ClassNotFoundException e) {
 			logger.error(e.getMessage(),e);
 			logger.error("Unrecoverable error Reader config class {} is unrecognizable " + configClass);
@@ -48,6 +55,23 @@ public abstract class JobBootStrap {
 			System.exit(1);
 		} 
 		CQLRowReader reader = new CQLRowReader(config,initJob(config));
+		List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
+		List<ColumnMetadata> colClusMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
+		
+		ColumnInfo []partitionCols = new ColumnInfo[colMeta.size()];
+		ColumnInfo []clusterCols = new ColumnInfo[colMeta.size()];
+		
+		int i = 0;
+		for (ColumnMetadata col:colMeta) {
+			partitionCols[i++] = new ColumnInfo(col);
+		}
+		i = 0;
+		for (ColumnMetadata col:colClusMeta) {
+			clusterCols[i++] = new ColumnInfo(col);
+		}
+		config.getPkConfig().setPartitionKeys(partitionCols);
+		config.getPkConfig().setClusterKeys(clusterCols);
+		
 		if (startToken!=null)
 			reader.config.setStartToken(Long.parseLong(startToken));
 		if (endToken!=null)
