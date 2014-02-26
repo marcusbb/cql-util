@@ -2,6 +2,9 @@ package reader;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ColumnMetadata;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
 public class RowCountJob extends ReaderJob<Void> {
@@ -18,7 +21,7 @@ public class RowCountJob extends ReaderJob<Void> {
 			this.count = count;
 		}
 		@Override
-		public Void process(Row row) {
+		public Void process(Row row,ColumnDefinitions meta, ExecutionInfo execInfo) {
 			count.incrementAndGet();
 			return null;
 		}

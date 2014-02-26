@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
 import reader.CQLRowReader;
@@ -46,7 +48,7 @@ public class DistinctCountJob extends ReaderJob<Object> {
 			this.threshold = threshold;
 		}
 		@Override
-		public Object process(Row row) {
+		public Object process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
 			
 			Object colObj = CQLRowReader.get(row, colToCount);//row.getString(colToCount);
 			

@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import reader.PKConfig.ColumnInfo;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -50,7 +52,7 @@ public class CQLRowReader {
 				return new RowReaderTask<Void>() {
 
 					@Override
-					public Void process(Row row) {
+					public Void process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
 						logger.debug("Reading Row");
 						return null;
 					}
@@ -144,7 +146,7 @@ public class CQLRowReader {
 				
 				try {
 					RowReaderTask rr =  job.newTask();
-					rr.process(row);
+					rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 				}catch (Exception e) {
 					//will have been caught above
 					logger.error(e.getMessage(), e);
@@ -212,7 +214,7 @@ public class CQLRowReader {
 					clusterKey = get(row,config.getPkConfig().getNonTokenPart()[0]);
 					try {
 						RowReaderTask rr = job.newTask();
-						rr.process(row);
+						rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 					}catch (Exception e) {
 						//we will be changing how tasks are instantiated
 						logger.error(e.getMessage(), e);

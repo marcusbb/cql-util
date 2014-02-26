@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import reader.RowReaderTask;
 
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
 public class DistRowCountJob extends DistReaderJob<Void> {
@@ -47,7 +49,7 @@ public class DistRowCountJob extends DistReaderJob<Void> {
 			this.count = count;
 		}
 		@Override
-		public Void process(Row row) {
+		public Void process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
 			count.incrementAndGet();
 			return null;
 		}

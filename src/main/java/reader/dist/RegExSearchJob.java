@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
 import driver.em.Composite;
@@ -56,7 +58,7 @@ public class RegExSearchJob extends DistReaderJob<Composite> {
 			
 		}
 		@Override
-		public Composite process(Row row) {
+		public Composite process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
 			Composite comp = null;
 			if (pattern.matcher(row.getString(colName)).matches() ) {
 				ArrayList<Object> compositeRow = new ArrayList<>();
