@@ -76,17 +76,13 @@ public class CQLRowReader {
 	public CQLRowReader(ReaderJob job) {
 		this.job = job;
 	}
-	/**
-	 * Self bootstrapping - connects to the cassandra cluster.
-	 * 
-	 * @param config - {@link ReaderConfig} - which must contain cassandra configuraiton details {@link CassConfig}
-	 * @param job
-	 */
-	//with a given ReaderConfig
-	public CQLRowReader(ReaderConfig config,ReaderJob job) {
-		this.cluster = CUtils.createCluster(config.getCassConfig());
-		this.session = cluster.connect(config.getKeyspace());
+	
+	
+	public CQLRowReader(ReaderConfig config,ReaderJob job,Cluster cluster,Session session) {
+		this.cluster = cluster;
+		this.session = session;
 		this.job = job;
+		this.config = config;
 	}
 	/**
 	 * Read from the configured start and end
@@ -201,6 +197,7 @@ public class CQLRowReader {
 				throw e;
 			}
 		}
+		logger.info("##Complete Read Total: {} ", totalReadCount);
 		//done while more
 		//job.onReadComplete();
 		

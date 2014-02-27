@@ -42,6 +42,10 @@ public class ReaderConfig implements Serializable {
 	
 	public static class TokenRange {
 		
+		public TokenRange(Long start,Long end) {
+			this.startToken = start;
+			this.endToken = end;
+		}
 		private Long startToken = Long.MIN_VALUE;
 		
 		private Long endToken = Long.MAX_VALUE;

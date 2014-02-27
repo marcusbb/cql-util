@@ -1,13 +1,25 @@
 package reader;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+
+import driver.em.CUtils;
+
+import reader.ReaderConfig.TokenRange;
 
 public abstract class MTJobBootStrap extends JobBootStrap {
 
 	protected ExecutorService executor;
+	
+	protected AtomicLong totalRows = new AtomicLong(0);
 	
 	static class TPFactory implements ThreadFactory {
 		AtomicInteger index = new AtomicInteger(1);
@@ -25,27 +37,37 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	public MTJobBootStrap(int nThreads) {
 		this.nThreads = nThreads;
 		
-		
 		executor = Executors.newFixedThreadPool(nThreads);
+		
+	}
+
+	
+	@Override
+	protected void bootstrap() {
+		super.bootstrap();
+		
 		
 		long delta = (config.getEndToken()/2 - config.getStartToken()/2)/nThreads *2;
 		long next = config.getStartToken();
 		
-		config.setTokenRanges(new ReaderConfig.TokenRange[nThreads]);
+		ArrayList<TokenRange> rangeList = new ArrayList<TokenRange>(nThreads);
 		//create the token ranges: one per thread
 		for (int i=0;i<nThreads;i++) {
+			TokenRange range = new TokenRange(next, config.getEndToken());
 			
-			config.getTokenRanges()[i].setStartToken(next);
 			if (i < (nThreads-1) )
-				config.getTokenRanges()[i].setEndToken(next + delta -1);
-			else
-				config.getTokenRanges()[i].setEndToken(config.getEndToken());
+				range.setEndToken(next + delta -1);
+
+			rangeList.add(range);
 			
 			next = next + delta;
 			
 		}
+		config.setTokenRanges(rangeList.toArray(new TokenRange[0]));
+		
 		
 	}
+
 
 	/**
 	 * Multi threaded execution: One thread per reader.
@@ -53,25 +75,35 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	 */
 	@Override
 	public void runJob() {
+		if (!initialized)
+			throw new IllegalArgumentException("Uninitialized bootstrap");
 		
 		for (int i=0;i<nThreads;i++) {
 			
 			final ReaderConfig.TokenRange[] tokenRanges = config.getTokenRanges();
 			final Integer index = i;
 			executor.submit(new Runnable() {
-				
+				CQLRowReader reader = new CQLRowReader(config,job,cluster,cluster.connect(config.getKeyspace()));
 				@Override
 				public void run() {
 					reader.read(tokenRanges[index].getStartToken(),tokenRanges[index].getEndToken());
 					
+					totalRows.addAndGet(reader.getTotalReadCount());
 				}
 			});
 		}
-		executor.shutdown();
+		try {
+			executor.shutdown();
+			executor.awaitTermination(30, TimeUnit.DAYS);
+		}catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		job.onReadComplete();
 		
 		logger.info("Shutting down cluster");
-		reader.cluster.shutdown();
+		cluster.shutdown();
+		//
+		logger.info("Complete multi-threaded read, total rows processed: {}", totalRows);
 		
 	}
 	

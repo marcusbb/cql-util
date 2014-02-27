@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import reader.PKConfig.ColumnInfo;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ColumnMetadata;
 
 import driver.em.CUtils;
@@ -21,9 +22,11 @@ public abstract class JobBootStrap {
 
 	static Logger logger = LoggerFactory.getLogger(JobBootStrap.class);
 	
-	protected CQLRowReader reader = null;
+	//protected CQLRowReader reader = null;
 	protected ReaderConfig config;
 	protected ReaderJob<?> job;
+	protected Cluster cluster;
+	protected volatile boolean initialized = false;
 	
 	/**
 	 * Should only be called once, can add checking but 
@@ -56,9 +59,10 @@ public abstract class JobBootStrap {
 			logger.error("Unrecoverable error reading configuration, please make sure reader-config.xml is valid and readable");
 			System.exit(1);
 		} 
+		this.cluster = CUtils.createCluster(config.getCassConfig());
 		job = initJob(config);
-		CQLRowReader reader = new CQLRowReader(config,job);
 		
+				
 		//Not sure the dynamic configuration works yet
 		/*List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
 		List<ColumnMetadata> colClusMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
@@ -78,16 +82,18 @@ public abstract class JobBootStrap {
 		config.getPkConfig().setClusterKeys(clusterCols);*/
 		
 		if (startToken!=null)
-			reader.config.setStartToken(Long.parseLong(startToken));
+			config.setStartToken(Long.parseLong(startToken));
 		if (endToken!=null)
-			reader.config.setEndToken(Long.parseLong(endToken));
-		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
-		reader.session = reader.cluster.connect(reader.config.getKeyspace());
+			config.setEndToken(Long.parseLong(endToken));
+		
+		initialized = true;
 
 	}
 	
 	public void runJob() {
-
+		CQLRowReader reader = new CQLRowReader(config, job, cluster, cluster.connect(config.getKeyspace()));
+		if (!initialized)
+			throw new IllegalArgumentException("Uninitialized bootstrap");
 		try {
 			reader.read();
 		}catch (Exception e) {

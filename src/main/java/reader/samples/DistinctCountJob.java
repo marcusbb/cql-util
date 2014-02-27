@@ -3,20 +3,17 @@ package reader.samples;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import reader.CQLRowReader;
+import reader.JobBootStrap;
+import reader.PKConfig;
+import reader.PKConfig.ColumnInfo;
+import reader.ReaderConfig;
+import reader.ReaderJob;
+import reader.RowReaderTask;
 
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
-
-import reader.CQLRowReader;
-import reader.JobBootStrap;
-import reader.PKConfig;
-import reader.ReaderConfig;
-import reader.ReaderJob;
-import reader.RowReaderTask;
-import reader.PKConfig.ColumnInfo;
 
 public class DistinctCountJob extends ReaderJob<Object> {
 
