@@ -24,9 +24,10 @@ Only a sinlge threaded fetch model is supported, although a customized executor 
 for operations against the driver - although writes to C* should be very fast.
 Possible mechanism for paged or bulk loading is also possible.
 
-The full set of configuration can be obtained from source [XMLConfig] (master/src/main/java/XMLConfig.java)
+The full set of configuration can be obtained from source [XMLConfig] (XMLConfig.java)
 Sample XML:
-```
+
+```xml
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <mapping>
 	<jdbcUrl><![CDATA[jdbc:mysql://localhost/hera?user=root&password=]]></jdbcUrl>
