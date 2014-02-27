@@ -26,7 +26,7 @@ public class ReaderConfig implements Serializable {
 	
 	private String []otherCols;
 	
-	//and MUST be larger than any column family row
+	
 	//this should be a large number - probably about 1000 + (and depending on your row CQL PK row sizes )
 	private int pageSize = 1000;
 	
