@@ -285,6 +285,10 @@ public class CQLRowReader {
 			ret = row.getUUID(info.name); 
 		return ret;
 	}
+	public static Object get(Row row, ColumnDefinitions.Definition colDefinition) {
+		ColumnInfo colInfo = new ColumnInfo(colDefinition.getName(), colDefinition.getType());
+		return get(row,colInfo);
+	}
 	private String getStringCompositeKey(Row row) {
 		ByteBuffer bb = getCompositeKey(row);
 		
