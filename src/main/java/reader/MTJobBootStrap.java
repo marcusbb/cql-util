@@ -28,7 +28,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		
 		executor = Executors.newFixedThreadPool(nThreads);
 		
-		long delta = (config.getEndToken())/nThreads *2;
+		long delta = (config.getEndToken()/2 - config.getStartToken()/2)/nThreads *2;
 		long next = config.getStartToken();
 		
 		config.setTokenRanges(new ReaderConfig.TokenRange[nThreads]);
