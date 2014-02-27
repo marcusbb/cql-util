@@ -24,13 +24,19 @@ Only a sinlge threaded fetch model is supported, although a customized executor 
 for operations against the driver - although writes to C* should be very fast.
 Possible mechanism for paged or bulk loading is also possible.
 
-TODO: package the tool for command line usage - maven assembly
-
+The full set of configuration can be obtained from source [XMLConfig] (master/src/main/java/XMLConfig.java)
 Sample XML:
+```
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <mapping>
 	<jdbcUrl><![CDATA[jdbc:mysql://localhost/hera?user=root&password=]]></jdbcUrl>
-	<cqlTable>user_files_v</cqlTable>
+	
+	<jdbcDriver>oracle.jdbc.driver.OracleDriver</jdbcDriver>
+	<jdbcUsername>username</jdbcUsername>
+	<jdbcPassword>password</jdbcPassword>
+	
+	<asyncWrites>true</asyncWrites>
+	
 	<sqlQuery><![CDATA[
 	SELECT  u.userName, f.*,0 as version, p.* FROM fileTbl f, filePropTbl p,userTbl u, clientTbl c where 
 	f.fileId_pk = p.fileId and c.clientId_pk = f.clientId and u.userId_pk = c.userId 
@@ -38,6 +44,7 @@ Sample XML:
 
 	<forEach>
 		<rsToCqlConfig>
+		    <keyspace>ks1</keyspace>
 			<cqlTable>users</cqlTable>
 			<columns>
 				<column>
@@ -74,6 +81,7 @@ Sample XML:
 			</columns>
 		</rsToCqlConfig>
 		<rsToCqlConfig>
+			<keyspace>ks1</keyspace>
 			<cqlTable>users</cqlTable>
 			<columns>
 				<column>
@@ -111,3 +119,4 @@ Sample XML:
 	</forEach>
 	
 </mapping>
+```
