@@ -50,7 +50,7 @@ public class Main {
 			
 			cluster = CUtils.createCluster(config.getCassConfig());
 			if(config.getKeyspace() != null){
-				sessions.put(RSExecutor.DEFAULT_KEY, CUtils.createSession(cluster, config.getKeyspace()));
+				sessions.put(config.getKeyspace(), CUtils.createSession(cluster, config.getKeyspace()));
 			}
 			
 			List<RSToCqlConfig> rsToCqlConfigs = config.getRsToCqlConfigs();

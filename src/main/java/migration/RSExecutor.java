@@ -6,18 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +26,6 @@ public class RSExecutor {
    
 	protected Map<String, Session> sessions;
 	static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
-	public static String DEFAULT_KEY = "default";
 	XMLConfig config;
 	
 	private static long defaultKeepAlive = 60; 
@@ -43,7 +37,7 @@ public class RSExecutor {
 	public RSExecutor(XMLConfig config, Session session) {
 		this.config = config;
 		this.sessions = new HashMap<String, Session>();
-		this.sessions.put(DEFAULT_KEY, session);
+		this.sessions.put(config.getKeyspace(), session);
 	}
 	
 	public RSExecutor(XMLConfig config, Map<String, Session> sessions) {
@@ -105,7 +99,8 @@ public class RSExecutor {
 					}
 
 					for (RowToCql row: operationStatements) {
-						Session session = (row.getKeyspace() != null)?sessions.get(row.getKeyspace()):sessions.get(DEFAULT_KEY);
+						final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
+						Session session = sessions.get(keyspace);
 						if(config.asyncWrites){
 							final String queryString = row.getStatement().buildQueryString();
 							final ResultSetFuture future = session.executeAsync(queryString);
@@ -115,9 +110,9 @@ public class RSExecutor {
 									try {
 										future.get();
 									} catch (InterruptedException e) {
-										logger.error("InterruptedException: " + e.getMessage() + "; " + queryString);
+										logger.error("InterruptedException: " + e.getMessage() + "; keyspace: " + keyspace + "; statement: " + queryString);
 									} catch (ExecutionException e) {
-										logger.error("ExecutionException: " + e.getMessage() + "; " + queryString);
+										logger.error("ExecutionException: " + e.getMessage() + "; keyspace: " + keyspace + "; statement: " + queryString);
 									}
 								}
 								
