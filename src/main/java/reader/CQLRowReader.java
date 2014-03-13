@@ -268,6 +268,8 @@ public class CQLRowReader {
 		Object ret = null;
 		if (DataType.ascii().equals(info.type) )
 			ret = row.getString(info.name);
+		else if (DataType.text().equals(info.type))
+			ret = row.getString(info.name);
 		else if (DataType.bigint().equals(info.type))
 			ret = row.getLong(info.name);
 		else if (DataType.cdouble().equals(info.type))
