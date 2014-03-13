@@ -46,7 +46,8 @@ public abstract class JobBootStrap {
 			JAXBContext jc = JAXBContext.newInstance(Class.forName(configClass));
 			Unmarshaller unmarshaller = jc.createUnmarshaller();
 			InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream(configFile);
-			
+			if (ins == null)
+				throw new IllegalArgumentException("File from classpath: " + configFile + " not found");
 			config = (ReaderConfig)unmarshaller.unmarshal(ins);
 			//discover the pk information:
 			
