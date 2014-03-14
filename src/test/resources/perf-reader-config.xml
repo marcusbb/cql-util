@@ -7,8 +7,8 @@
 		<connectionTimeoutMs>5000</connectionTimeoutMs>
 		<contactHostsName>marcus-v4.rim.net</contactHostsName>
 		
-		<coreConnectionsPerLocalHost>10</coreConnectionsPerLocalHost>
-		<coreConnectionsPerRemoteHost>10</coreConnectionsPerRemoteHost>
+		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
+		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
 		<keepAlive>true</keepAlive>
 		<localDataCenterName>datacenter1</localDataCenterName>
 		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>

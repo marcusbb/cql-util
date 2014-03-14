@@ -1,3 +1,5 @@
+VERY EXPERIMENTAL.
+
 Motivation:
 Do batch processing on top of the C* cluster without having to do an integration of hadoop a top of C* nodes.
 Management of a name node, job tracker and other components in the hadoop ecosystem is complicated.
