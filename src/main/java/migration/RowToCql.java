@@ -80,7 +80,7 @@ public class RowToCql {
 			value = rs.getLong(mapping.jdbcName);
 		}		
 		else if (DataType.timestamp().equals(mapping.type)) {
-			value = rs.getDate(mapping.jdbcName);
+			value = rs.getTimestamp(mapping.jdbcName);
 		}else if (DataType.blob().equals(mapping.type)) {
 			value = rs.getBytes(mapping.jdbcName);
 		}

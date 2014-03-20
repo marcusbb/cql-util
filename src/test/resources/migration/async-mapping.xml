@@ -6,7 +6,7 @@
 	<jdbcPassword>cardhu</jdbcPassword>
 	<asyncWrites>true</asyncWrites>
 	<sqlQuery><![CDATA[
-	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'DDD') as last_auth_activity 
+	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'HH24') as last_auth_activity 
 	FROM subscriber_devices sd, devices d 
 	WHERE sd.device_id = d.device_id AND sd.status_code = 'A'
 	]]></sqlQuery>
