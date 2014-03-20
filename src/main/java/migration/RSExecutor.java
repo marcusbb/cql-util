@@ -10,9 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +25,13 @@ import driver.em.SimpleStatement;
 public class RSExecutor {
    
 	protected Map<String, Session> sessions;
+	protected Map<String, Logger> keyspaceLoggers;
+	
+	static String KEYSPACE_LOGGER_PREFIX = "cql.keyspace.";
 	static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
 	XMLConfig config;
+	long requestCount;
+	AtomicLong asyncResultsCount = new AtomicLong(0l);
 	
 	private static long defaultKeepAlive = 60; 
 	private static TimeUnit defaultKeepAliveTU = TimeUnit.SECONDS;
@@ -35,16 +40,35 @@ public class RSExecutor {
 	private static int maxPoolSize = 10;
 	
 	public RSExecutor(XMLConfig config, Session session) {
-		this.config = config;
-		this.sessions = new HashMap<String, Session>();
-		this.sessions.put(config.getKeyspace(), session);
+		HashMap<String, Session> sessions = new HashMap<String, Session>();
+		sessions.put(config.getKeyspace(), session);
+		
+		init(config, sessions);
 	}
 	
 	public RSExecutor(XMLConfig config, Map<String, Session> sessions) {
-		this.config = config;
-		this.sessions = sessions;
+		init(config, sessions);
 	}
 	
+	void init(XMLConfig config, Map<String, Session> sessions){
+		this.config = config;
+		this.sessions = sessions;
+		addKeyspaceLogger(this.sessions.keySet().toArray(new String[this.sessions.size()]));
+	}
+	
+	void addKeyspaceLogger(String... keyspaceNames){
+		
+		if(keyspaceLoggers == null){
+			keyspaceLoggers = new HashMap<String, Logger>();
+		}
+		
+		for(String keyspaceName : keyspaceNames){
+			if(!keyspaceLoggers.containsKey(keyspaceName)){
+				keyspaceLoggers.put(keyspaceName,  LoggerFactory.getLogger(KEYSPACE_LOGGER_PREFIX.concat(keyspaceName)));
+			}
+		}
+	}
+
 	private Connection getJdbcConnection() throws SQLException, ClassNotFoundException{
 		if(config.getJdbcDriver() != null){
 			Class.forName(config.getJdbcDriver());
@@ -68,6 +92,9 @@ public class RSExecutor {
 	}
 	
 	public void execute() throws SQLException, ClassNotFoundException {
+		requestCount = 0l;
+		asyncResultsCount.set(0l);
+		
 		Connection conn = null;
 		Statement stmt = null;
 		ResultSet rs =  null;
@@ -88,53 +115,87 @@ public class RSExecutor {
 			//build the Row and RowtoMap
 			List<RowToCql> operationStatements = getOperationStatements(rs);
 			
-			//TODO replace this with a JMX metric.
-			int count = 0;
-			
 			ThreadPoolExecutor exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
 			while (rs.next()) {
-				try {
-					if (count++ % 1000 == 0){
-						logger.info("completed: " + count);
+					if (requestCount++ % 1000 == 0){
+						logger.info("completed db rows: " + requestCount);
 					}
 
 					for (RowToCql row: operationStatements) {
 						final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
 						Session session = sessions.get(keyspace);
-						if(config.asyncWrites){
-							final String queryString = row.getStatement().buildQueryString();
-							final ResultSetFuture future = session.executeAsync(queryString);
-							future.addListener( new Runnable(){
-								@Override
-								public void run() {
-									try {
-										future.get();
-									} catch (InterruptedException e) {
-										logger.error("InterruptedException: " + e.getMessage() + "; keyspace: " + keyspace + "; statement: " + queryString);
-									} catch (ExecutionException e) {
-										logger.error("ExecutionException: " + e.getMessage() + "; keyspace: " + keyspace + "; statement: " + queryString);
+						final String queryString = row.getStatement().buildQueryString();
+						
+						try{
+							if(config.asyncWrites){
+								final ResultSetFuture future = session.executeAsync(queryString);
+								future.addListener( new Runnable(){
+
+									@Override
+									public void run() {
+										try {
+											future.getUninterruptibly();
+										} catch (Throwable e) {
+											logger.error("Exception: " + e.getMessage() + "; keyspace: " + keyspace, e);
+											logFailedCql(keyspace, queryString);
+										} 
+										finally{
+											asyncResultsCount.incrementAndGet();
+										}
 									}
-								}
-								
-							}, exec);
-						}else{
-							session.execute(
-									row.getStatement().buildQueryString()
-									);
+
+								}, exec);
+							}else{
+								session.execute(queryString);
+							}
+						}catch (Exception e) {
+							logger.error("Exception writing to cassandra: " + e.getMessage() + "; keyspace: " + keyspace, e);
+							logFailedCql(keyspace, queryString);
+							
 						}
 					}
-
-				}catch (Exception e) {
-					//TODO log it properly so it can be retried for later
-					logger.error("Exception writing to cassandra: " + e.getMessage(), e);
-				}
 			}
 			
+			logger.info("completed: " + requestCount);
+			
+			if(config.asyncWrites){
+				long cqlRequestCount = (requestCount * operationStatements.size());
+				while(asyncResultsCount.get() < cqlRequestCount){
+					long processed = asyncResultsCount.get();
+					logger.info("Asynchronous tasks still processing, main thread sleeping for 60 seconds." 
+							+ " QueueSize: " + exec.getQueue().size() 
+							+ "; Active Thread Count: " + exec.getActiveCount() 
+							+ "; CQLRequestCount: " + cqlRequestCount
+							+ "; ResultCount: " + processed
+							+ "; Remaining Result Count: " + ( cqlRequestCount - processed ) );
+					
+					try {
+						Thread.sleep(60000);
+					} catch (InterruptedException e) {
+					}
+				}	
+			}
 		}finally{
 			close(rs);
 			close(stmt);
 			close(conn);
 		}
+	}
+
+	void logFailedCql(String keyspaceName, String queryString){
+		if(!queryString.trim().endsWith(";")){
+			queryString = queryString.concat(";");
+		}
+		
+		keyspaceLoggers.get(keyspaceName).error(queryString);
+	}
+	
+	public long getRequestCount() {
+		return requestCount;
+	}
+
+	public AtomicLong getAsyncResultsCount() {
+		return asyncResultsCount;
 	}
 
 	public void close(ResultSet rs){

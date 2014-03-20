@@ -1,17 +1,20 @@
 package migration;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import util.JAXBUtil;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
@@ -19,10 +22,17 @@ import com.datastax.driver.core.Session;
 import driver.em.CUtils;
 
 public class Main {
-	static Logger logger =  LoggerFactory.getLogger(Main.class);
+	//do this first to initialize jvm properties file into system properties
+	static Logger logger;
+	static{
+		initializeJvmProperties();
+		logger = LoggerFactory.getLogger(Main.class);
+	}
+	
 	public String fileName = "config.xml";
 	
 	public Main(String mappingFileName){
+		
 		if(mappingFileName != null){
 			this.fileName = mappingFileName;
 		}
@@ -30,18 +40,7 @@ public class Main {
 	
 	public void execute() throws Exception{
 		
-		InputStream ins = null;
-		File file = new File(fileName);
-		if(file.exists()){
-			ins = file.toURI().toURL().openStream();
-		}else{
-			ins = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
-		}
-		
-		JAXBContext jc = JAXBContext.newInstance(XMLConfig.class);
-		Unmarshaller unmarshaller = jc.createUnmarshaller();
-		XMLConfig config = (XMLConfig)unmarshaller.unmarshal(ins);
-		
+		XMLConfig config = (XMLConfig)JAXBUtil.unmarshalXmlFile(fileName, XMLConfig.class);
 		Cluster cluster = null;
 		
 		Map<String, Session> sessions = new HashMap<String, Session>();
@@ -74,6 +73,36 @@ public class Main {
 				boolean isShutdown = cluster.shutdown(300000, TimeUnit.MILLISECONDS);
 				logger.info("Cluster Shutdown: " + isShutdown);
 			}
+		}
+	}
+	
+	static void initializeJvmProperties(){
+		
+		String jvmPropsFile =  System.getProperty("migration.jvm.propertiesFile");
+		if(jvmPropsFile != null){
+			
+			System.out.println("Loading JVM properties File: " + jvmPropsFile);
+			Properties systemProps = new Properties();
+			try {
+				systemProps.load(new FileInputStream(jvmPropsFile));
+			} catch (FileNotFoundException e) {
+				System.out.println("JVM properties File Not Found: " + jvmPropsFile);
+				System.exit(1);
+			} catch (IOException e) {
+				System.out.println("IOException reading JVM properties: " + jvmPropsFile + "; Message: " + e.getMessage());
+				e.printStackTrace(System.out);
+				System.exit(1);
+			}
+			
+			//using this replaces all environment variables so set one by one
+			//System.setProperties(systemProps);
+			if(!systemProps.isEmpty()){
+				Set<Entry<Object, Object>> sysProps = systemProps.entrySet();
+				for(Entry<Object, Object> sysProp: sysProps){
+					System.setProperty((String)sysProp.getKey(), (String)sysProp.getValue());
+				}
+			}
+			
 		}
 	}
 	

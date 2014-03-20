@@ -9,7 +9,7 @@ public class IntegrationMigrationTest {
 	@Ignore
 	@Test
 	public void testMigrationEnd2End() throws Exception {
-	  
+		//System.setProperty("log4j.configuration", "file:./migration/log4j.xml");
 		String fileName = "migration/mapping.xml";
 	    Main main = new Main(fileName);
 		main.execute();
@@ -18,9 +18,10 @@ public class IntegrationMigrationTest {
 	@Ignore
 	@Test
 	public void testMigrationAsyncWrites() throws Exception {
-		  
+		//System.setProperty("log4j.configuration", "file:./migration/log4j.xml");
 		String fileName = "migration/async-mapping.xml";
 	    Main main = new Main(fileName);
 		main.execute();
+	
 	}
 }
