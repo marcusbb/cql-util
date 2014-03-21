@@ -188,26 +188,5 @@ public class CassConfig implements Serializable {
 		this.password = password;
 	}
 	
-	@Override
-	public String toString() {
-		return "CassConfig [contactHostsName="
-				+ Arrays.toString(contactHostsName) + ", nativePort="
-				+ nativePort + ", localDataCenterName=" + localDataCenterName
-				+ ", username=" + username
-				+ ", concurrentLocal=" + concurrentLocal
-				+ ", concurrentRemote=" + concurrentRemote
-				+ ", coreConnectionsPerLocalHost="
-				+ coreConnectionsPerLocalHost + ", maxConnectionsPerLocalHost="
-				+ maxConnectionsPerLocalHost
-				+ ", coreConnectionsPerRemoteHost="
-				+ coreConnectionsPerRemoteHost
-				+ ", maxConnectionsPerRemoteHost="
-				+ maxConnectionsPerRemoteHost + ", baseReconnectDelay="
-				+ baseReconnectDelay + ", maxReconnectDelay="
-				+ maxReconnectDelay + ", connectionTimeoutMs="
-				+ connectionTimeoutMs + ", keepAlive=" + keepAlive
-				+ ", soLinger=" + soLinger + ", tcpNoDelay=" + tcpNoDelay
-				+ ", readTimeoutMs=" + readTimeoutMs + ", loadBalancing="
-				+ loadBalancing + "]";
-	}
+	
 }
