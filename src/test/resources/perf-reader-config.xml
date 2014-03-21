@@ -11,8 +11,8 @@
 		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
 		<keepAlive>true</keepAlive>
 		<localDataCenterName>datacenter1</localDataCenterName>
-		<maxConnectionsPerLocalHost>2</maxConnectionsPerLocalHost>
-		<maxConnectionsPerRemoteHost>2</maxConnectionsPerRemoteHost>
+		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>
+		<maxConnectionsPerRemoteHost>10</maxConnectionsPerRemoteHost>
 		<maxReconnectDelay>600000</maxReconnectDelay>
 		<nativePort>9042</nativePort>
 		<readTimeoutMs>120000</readTimeoutMs>
@@ -23,14 +23,14 @@
 	<table>devices</table>
 	<pageSize>1000</pageSize>
 	<pkConfig>
-		<tokenPart>
+		<partitionKeys>
 			<name>id</name>
 			<type>ASCII</type>
-		</tokenPart>
-		<nonTokenPart>
+		</partitionKeys>
+		<clusterKeys>
 			<name>name</name>
 			<type>ASCII</type>
-		</nonTokenPart>
+		</clusterKeys>
 		
 	</pkConfig>
 	<otherCols>value</otherCols>

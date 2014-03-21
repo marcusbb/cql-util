@@ -1,6 +1,5 @@
 package reader;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,14 +7,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 
-import org.mortbay.jetty.InclusiveByteRange;
 import org.slf4j.Logger;
 
+import reader.PKConfig.ColumnInfo;
+
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -39,22 +39,70 @@ public class CQLRowReader {
 	
 	ReaderConfig config;
 	
+	ReaderJob job;
+	
 	long totalReadCount = 0;
 	
+	//should remove this
+	public CQLRowReader() {
+		job = new ReaderJob<Void>() {
+			
+			@Override
+			public RowReaderTask<Void> newTask() throws Exception {
+				return new RowReaderTask<Void>() {
+
+					@Override
+					public Void process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
+						logger.debug("Reading Row");
+						return null;
+					}
+				};
+			}
+
+			@Override
+			public void processResult(Void result) {
+				
+				
+			}
+
+			@Override
+			public void onReadComplete() {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		};
+	}
+	public CQLRowReader(ReaderJob job) {
+		this.job = job;
+	}
 	
 	
+	public CQLRowReader(ReaderConfig config,ReaderJob job,Cluster cluster,Session session) {
+		this.cluster = cluster;
+		this.session = session;
+		this.job = job;
+		this.config = config;
+	}
+	/**
+	 * Read from the configured start and end
+	 */
 	public void read() {
-		boolean more = true;
-		
-		//start at the beginning of the token range.
 		Long startToken = config.getStartToken();
 		
 		Long endToken = config.getEndToken();
 		
+		read(startToken,endToken);
+	}
+	
+	public void read(final Long startOfToken,final Long endToken) {
+		boolean more = true;
 		
+		//start at the beginning of the token range.
+						
 		int pageSize = config.getPageSize();
 		
-			
+		long startToken = startOfToken;
 		
 		//HashSet container to keep track of all of items in the last fetch
 		//it's compared to a current page count to exclude duplicates from previous
@@ -106,8 +154,8 @@ public class CQLRowReader {
 				curReadCount++;
 				
 				try {
-					RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
-					rr.process(row);
+					RowReaderTask rr =  job.newTask();
+					rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 				}catch (Exception e) {
 					//will have been caught above
 					logger.error(e.getMessage(), e);
@@ -148,6 +196,9 @@ public class CQLRowReader {
 				throw e;
 			}
 		}
+		logger.info("##Complete Read Total: {} ", totalReadCount);
+		//done while more
+		//job.onReadComplete();
 		
 	}
 	//The pageSize is less than the size of the row, so we must 
@@ -155,9 +206,9 @@ public class CQLRowReader {
 	//via assumes that the cluster key is ASC otherwise this logic may not work
 	protected void readWide(Row startRow) {
 		
-		Object partKey = get(startRow,config.getPkConfig().getTokenPart()[0]);
+		Object partKey = get(startRow,config.getPkConfig().getPartitionKeys()[0]);
 		//this will be modified as we iterate through the wide row
-		Object clusterKey = get(startRow,config.getPkConfig().getNonTokenPart()[0]);
+		Object clusterKey = get(startRow,config.getPkConfig().getClusterKeys()[0]);
 		
 		boolean more =true;
 		//increment
@@ -171,10 +222,10 @@ public class CQLRowReader {
 			else {
 				for (Row row:allRows) {
 					totalReadCount++;
-					clusterKey = get(row,config.getPkConfig().getNonTokenPart()[0]);
+					clusterKey = get(row,config.getPkConfig().getClusterKeys()[0]);
 					try {
-						RowReaderTask rr = (RowReaderTask)Class.forName( config.getReaderTask() ).newInstance();
-						rr.process(row);
+						RowReaderTask rr = job.newTask();
+						rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 					}catch (Exception e) {
 						//we will be changing how tasks are instantiated
 						logger.error(e.getMessage(), e);
@@ -194,10 +245,10 @@ public class CQLRowReader {
 	
 	private ByteBuffer getRowCompositeKey(Row row) {
 		ArrayList<Object> objList = new ArrayList<>();
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			objList.add(get(row,colinfo));			
 		}
-		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
 			objList.add(get(row,colinfo));	
 		}
 		return Composite.toByteBuffer(objList);
@@ -206,7 +257,7 @@ public class CQLRowReader {
 	}
 	private ByteBuffer[] getRouteKey(Row row) {
 		ArrayList<Object> objList = new ArrayList<>();
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			objList.add(get(row,colinfo));			
 		}
 		return CUtils.getBytesForRoute(objList);
@@ -215,6 +266,8 @@ public class CQLRowReader {
 	public static Object get(Row row,ColumnInfo info) {
 		Object ret = null;
 		if (DataType.ascii().equals(info.type) )
+			ret = row.getString(info.name);
+		else if (DataType.text().equals(info.type))
 			ret = row.getString(info.name);
 		else if (DataType.bigint().equals(info.type))
 			ret = row.getLong(info.name);
@@ -230,6 +283,10 @@ public class CQLRowReader {
 			ret = row.getUUID(info.name); 
 		return ret;
 	}
+	public static Object get(Row row, ColumnDefinitions.Definition colDefinition) {
+		ColumnInfo colInfo = new ColumnInfo(colDefinition.getName(), colDefinition.getType());
+		return get(row,colInfo);
+	}
 	private String getStringCompositeKey(Row row) {
 		ByteBuffer bb = getCompositeKey(row);
 		
@@ -244,15 +301,15 @@ public class CQLRowReader {
 	 * @return
 	 */
 	private ByteBuffer getCompositeKey(Row row) {
-		ArrayList<ByteBuffer> list = new ArrayList<>(config.getPkConfig().getTokenPart().length + config.getPkConfig().getNonTokenPart().length);
+		ArrayList<ByteBuffer> list = new ArrayList<>(config.getPkConfig().getPartitionKeys().length + config.getPkConfig().getClusterKeys().length);
 		int balloc = 0;
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
 			balloc += b.capacity();
 			list.add(b);
 			
 		}
-		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
 			ByteBuffer b = row.getBytesUnsafe(colinfo.name);
 			balloc += b.capacity();
 			list.add(b);
@@ -278,7 +335,7 @@ public class CQLRowReader {
 	private String prepareWide(boolean inclusiveGT,int limit) {
 		StringBuilder builder = new StringBuilder("SELECT  " );
 		
-		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
 			builder.append(colinfo.name).append(",");
 		}
 		if (config.getOtherCols() != null)
@@ -288,10 +345,10 @@ public class CQLRowReader {
 		builder.replace(builder.length()-1, builder.length(), "");
 		builder.append(" FROM " + config.getTable()+ " WHERE ");
 		
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			builder.append(colinfo.name).append(" = ? AND ");
 		}
-		builder.append(config.getPkConfig().getNonTokenPart()[0].getName());
+		builder.append(config.getPkConfig().getClusterKeys()[0].getName());
 		if (!inclusiveGT)
 			builder.append(" > ?");
 		else
@@ -304,19 +361,19 @@ public class CQLRowReader {
 		StringBuilder builder = new StringBuilder("SELECT ");
 		StringBuilder tokenPart = new StringBuilder("token(");
 		int i = 0;
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			tokenPart.append(colinfo.name);
-			if (i<config.getPkConfig().getTokenPart().length -1)
+			if (i<config.getPkConfig().getPartitionKeys().length -1)
 				tokenPart.append(", ");
 
 		}
 		tokenPart.append(") ");
 		builder.append(tokenPart).append(", ");
 		
-		for (ColumnInfo colinfo:config.getPkConfig().getTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			builder.append(colinfo.name).append(",");
 		}
-		for (ColumnInfo colinfo:config.getPkConfig().getNonTokenPart()) {
+		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
 			builder.append(colinfo.name).append(",");
 		}
 		if (config.getOtherCols() != null)

@@ -23,18 +23,18 @@
 	<table>devices2</table>
 	<pageSize>1000</pageSize>
 	<pkConfig>
-		<tokenPart>
+		<partitionKeys>
 			<name>id</name>
 			<type>ASCII</type>
-		</tokenPart>
-		<nonTokenPart>
+		</partitionKeys>>
+		<clusterKeys>
 			<name>type</name>
 			<type>ASCII</type>
-		</nonTokenPart>
-		<nonTokenPart>
+		</clusterKeys>>
+		<clusterKeys>
 			<name>name</name>
 			<type>ASCII</type>
-		</nonTokenPart>
+		</clusterKeys>
 		
 	</pkConfig>
 </config>

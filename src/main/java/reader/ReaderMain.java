@@ -12,7 +12,11 @@ import com.datastax.driver.core.Cluster;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
-
+/**
+ * 
+ * @deprecated
+ *
+ */
 public class ReaderMain {
 
 	static Cluster cluster = null;
@@ -42,21 +46,20 @@ public class ReaderMain {
 			reader.config.setEndToken(Long.parseLong(endToken));
 		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
 		reader.session = reader.cluster.connect(reader.config.getKeyspace());
-		
-		//for exception safety below
-		Class.forName( reader.config.getReaderTask() ).newInstance();
+
 		try {
 			reader.read();
 		}catch (Exception e) {
 			logger.error(e.getMessage(),e);
 		}
+
 		
 		//hack util we have proper reporting and job handling
-		RowReaderTask<?> rowReader = (RowReaderTask<?>)Class.forName( reader.config.getReaderTask() ).newInstance();
+		/*RowReaderTask<?> rowReader = (RowReaderTask<?>)Class.forName( reader.config.getReaderTask() ).newInstance();
 		if (rowReader instanceof LargeRowsTask) {
 			LargeRowsTask task = (LargeRowsTask)rowReader;
 			task.printAll();
-		}
+		}*/
 		//end hack
 		logger.info("Shutting down cluster");
 		reader.cluster.shutdown();

@@ -5,31 +5,36 @@
 		<concurrentLocal>100</concurrentLocal>
 		<concurrentRemote>100</concurrentRemote>
 		<connectionTimeoutMs>5000</connectionTimeoutMs>
-		<contactHostsName>localhost</contactHostsName>
+		<contactHostsName>marcus-v4.rim.net</contactHostsName>
 		
-		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
-		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
+		<coreConnectionsPerLocalHost>10</coreConnectionsPerLocalHost>
+		<coreConnectionsPerRemoteHost>10</coreConnectionsPerRemoteHost>
 		<keepAlive>true</keepAlive>
 		<localDataCenterName>datacenter1</localDataCenterName>
-		<maxConnectionsPerLocalHost>2</maxConnectionsPerLocalHost>
-		<maxConnectionsPerRemoteHost>2</maxConnectionsPerRemoteHost>
+		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>
+		<maxConnectionsPerRemoteHost>10</maxConnectionsPerRemoteHost>
 		<maxReconnectDelay>600000</maxReconnectDelay>
 		<nativePort>9042</nativePort>
 		<readTimeoutMs>120000</readTimeoutMs>
 		<soLinger>5000</soLinger>
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
-	<table>devices</table>
-	<pageSize>1000</pageSize>
+	<keyspace>icrs</keyspace>
+	<table>device_advertised_services</table>
+	<pageSize>2000</pageSize>
 	<pkConfig>
-		
-		<tokenPart>
-			<name>id</name>
+		<partitionKeys>
+			<name>device_id</name>
 			<type>ASCII</type>
-		</tokenPart>
-		<nonTokenPart>
+		</partitionKeys>
+		<clusterKeys>
+			<name>service_id</name>
+			<type>ASCII</type>
+		</clusterKeys>
+		<clusterKeys>
 			<name>name</name>
 			<type>ASCII</type>
-		</nonTokenPart>
+		</clusterKeys>
 	</pkConfig>
+	<otherCols>value</otherCols>
 </config>

@@ -1,15 +1,12 @@
 package reader;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 
 import javax.xml.bind.JAXBContext;
 
-import migration.XMLConfig;
-
-import org.apache.cassandra.db.ColumnIndex;
 import org.junit.Test;
+
+import reader.PKConfig.ColumnInfo;
 
 import com.datastax.driver.core.DataType;
 
