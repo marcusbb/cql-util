@@ -7,6 +7,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.datastax.driver.core.ConsistencyLevel;
+
 import driver.em.CassConfig;
 
 @XmlRootElement(name="mapping")
@@ -31,6 +33,8 @@ public class XMLConfig {
 	boolean asyncWrites;
 	
 	int batchWrites;
+	
+	ConsistencyLevel consistencyLevel;
 	
 	//used for testing purposes only
 	boolean bypassCassandra;
@@ -122,6 +126,14 @@ public class XMLConfig {
 		this.batchWrites = batchWrites;
 	}
 
+	public ConsistencyLevel getConsistencyLevel() {
+		return consistencyLevel;
+	}
+
+	public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+		this.consistencyLevel = consistencyLevel;
+	}
+
 	public boolean isBypassCassandra() {
 		return bypassCassandra;
 	}
@@ -137,6 +149,8 @@ public class XMLConfig {
 				+ sqlQuery + ", keyspace=" + keyspace + ", cassConfig="
 				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs
 				+ ", asyncWrites=" + asyncWrites + ", batchWrites="
-				+ batchWrites + ", bypassCassandra=" + bypassCassandra + "]";
+				+ batchWrites + ", consistencyLevel=" + consistencyLevel
+				+ ", bypassCassandra=" + bypassCassandra + "]";
 	}
+
 }
