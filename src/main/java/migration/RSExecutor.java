@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -62,7 +63,9 @@ public class RSExecutor {
 		keyspaces = retrieveKeyspaces();
 		
 		exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
-		String keyspaces[] = retrieveKeyspaces();
+		if(config.getConsistencyLevel()==null){
+			config.setConsistencyLevel(ConsistencyLevel.ONE);
+		}
 		keyspaceBatchStatements = new HashMap<String, List<com.datastax.driver.core.Statement>>();
 		keyspaceLoggers = new HashMap<String, Logger>();
 		sessions = new HashMap<String, Session>();
@@ -195,7 +198,7 @@ public class RSExecutor {
 		
 		final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
 		
-		String queryString = row.getStatement().buildQueryString();
+		com.datastax.driver.core.Statement statement = new com.datastax.driver.core.SimpleStatement(row.getStatement().buildQueryString());
 		try{
 			boolean performBatchWrites = (config.batchWrites > 1);
 			boolean writeToCassandra = !performBatchWrites;
@@ -203,34 +206,36 @@ public class RSExecutor {
 			
 			List<com.datastax.driver.core.Statement> statementList = keyspaceBatchStatements.get(keyspace);
 			if(performBatchWrites){
-				statementList.add(new com.datastax.driver.core.SimpleStatement(queryString));
+				statementList.add(statement);
 				
 				batchSize = statementList.size();
 				if(batchSize == config.batchWrites){	
-					queryString = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize])).getQueryString();
+					statement = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize]));
 					statementList.clear();
 					writeToCassandra = true;
 				}
 			}
 			
 			if(writeToCassandra){
-				writeToCassandra(keyspace, queryString, batchSize);
+				writeToCassandra(keyspace, statement, batchSize);
 			}
 		}catch (Exception e) {
 			logger.error("Exception writing to cassandra: " + e.getMessage() + "; keyspace: " + keyspace, e);
-			logFailedCql(keyspace, queryString);
+			logFailedCql(keyspace, statement.getQueryString());
 		}
 	}
 
-	protected void writeToCassandra(final String keyspace, final String queryString, final int batchSize){
+	protected void writeToCassandra(final String keyspace, final com.datastax.driver.core.Statement statement, final int batchSize){
 		if(config.bypassCassandra){
 			return;
 		}
+	
+		statement.setConsistencyLevel(config.getConsistencyLevel());
 		
 		Session session = sessions.get(keyspace);
-		
 		if(config.asyncWrites){
-			final ResultSetFuture future = session.executeAsync(queryString);
+			final String queryString = statement.getQueryString();
+			final ResultSetFuture future = session.executeAsync(statement);
 			future.addListener( new Runnable(){
 
 				@Override
@@ -248,7 +253,7 @@ public class RSExecutor {
 
 			}, exec);
 		}else{
-			session.execute(queryString);
+			session.execute(statement);
 		}
 	}
 	
@@ -258,10 +263,10 @@ public class RSExecutor {
 				List<com.datastax.driver.core.Statement> statementList = keyspaceBatchStatements.get(keyspace);
 				int batchSize = statementList.size();
 				if(batchSize > 0){
-					String queryString = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize])).getQueryString();
+					com.datastax.driver.core.Statement statement = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize]));
 					statementList.clear();
 				
-					writeToCassandra(keyspace, queryString, batchSize);
+					writeToCassandra(keyspace, statement, batchSize);
 				}
 			}
 		}

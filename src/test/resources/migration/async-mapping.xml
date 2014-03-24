@@ -50,7 +50,7 @@
 	</cassConfig>
 	<forEach>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_1</keyspace>
+			<keyspace>diana_nr1</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>
@@ -68,7 +68,7 @@
 			</columns>
 		</rsToCqlConfig>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_2</keyspace>
+			<keyspace>diana_nr2</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>
@@ -86,7 +86,7 @@
 			</columns>
 		</rsToCqlConfig>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_3</keyspace>
+			<keyspace>diana_nr3</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>

@@ -6,6 +6,7 @@
 	<jdbcPassword>cardhu</jdbcPassword>
 	<asyncWrites>true</asyncWrites>
 	<batchWrites>15</batchWrites>
+	<consistencyLevel>ANY</consistencyLevel>
 	<sqlQuery><![CDATA[
 	SELECT d.device_query_identifier, TRUNC(GREATEST (NVL(sd.last_auth_ts, NVL(sd.last_update_ts, sd.create_ts)), NVL(sd.last_refresh_ts, NVL(sd.last_update_ts, sd.create_ts))), 'HH24') as last_auth_activity 
 	FROM subscriber_devices sd, devices d 
@@ -51,7 +52,7 @@
 	</cassConfig>
 	<forEach>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_1</keyspace>
+			<keyspace>diana_nr1</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>
@@ -69,7 +70,7 @@
 			</columns>
 		</rsToCqlConfig>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_2</keyspace>
+			<keyspace>diana_nr2</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>
@@ -87,7 +88,7 @@
 			</columns>
 		</rsToCqlConfig>
 		<rsToCqlConfig>
-			<keyspace>diana_nr_3</keyspace>
+			<keyspace>diana_nr3</keyspace>
 			<cqlTable>last_auth_activity</cqlTable>
 			<columns>
 				<column>
