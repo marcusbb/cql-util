@@ -24,4 +24,14 @@ public class IntegrationMigrationTest {
 		main.execute();
 	
 	}
+	
+	@Ignore
+	@Test
+	public void testMigrationAsyncBatchWrites() throws Exception {
+		//System.setProperty("log4j.configuration", "file:./migration/log4j.xml");
+		String fileName = "migration/async-batch-mapping.xml";
+	    Main main = new Main(fileName);
+		main.execute();
+	
+	}
 }

@@ -1,5 +1,8 @@
 package migration;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,24 +17,22 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 
+import driver.em.CUtils;
 import driver.em.SimpleStatement;
 
 public class RSExecutor {
-   
-	protected Map<String, Session> sessions;
-	protected Map<String, Logger> keyspaceLoggers;
 	
-	static String KEYSPACE_LOGGER_PREFIX = "cql.keyspace.";
-	static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
-	XMLConfig config;
-	long requestCount;
-	AtomicLong asyncResultsCount = new AtomicLong(0l);
+	private static String KEYSPACE_LOGGER_PREFIX = "cql.keyspace.";
+	private static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
 	
 	private static long defaultKeepAlive = 60; 
 	private static TimeUnit defaultKeepAliveTU = TimeUnit.SECONDS;
@@ -39,36 +40,68 @@ public class RSExecutor {
 	private static int corePoolSize = 5;
 	private static int maxPoolSize = 10;
 	
-	public RSExecutor(XMLConfig config, Session session) {
-		HashMap<String, Session> sessions = new HashMap<String, Session>();
-		sessions.put(config.getKeyspace(), session);
-		
-		init(config, sessions);
-	}
+	protected String[] keyspaces;
+	protected Map<String, Session> sessions;
+	protected Cluster cluster;
 	
-	public RSExecutor(XMLConfig config, Map<String, Session> sessions) {
-		init(config, sessions);
-	}
+	protected Connection conn = null;
+	protected Statement stmt = null;
+	protected ResultSet rs =  null;
 	
-	void init(XMLConfig config, Map<String, Session> sessions){
+	protected Map<String, Logger> keyspaceLoggers;
+	protected Map<String, List<com.datastax.driver.core.Statement>> keyspaceBatchStatements;
+	protected ThreadPoolExecutor exec;
+	
+	XMLConfig config;
+	long requestCount;
+	long cqlRequestCount;
+	AtomicLong asyncResultsCount = new AtomicLong(0l);
+	
+	public RSExecutor(XMLConfig config) throws ClassNotFoundException, SQLException{
 		this.config = config;
-		this.sessions = sessions;
-		addKeyspaceLogger(this.sessions.keySet().toArray(new String[this.sessions.size()]));
-	}
-	
-	void addKeyspaceLogger(String... keyspaceNames){
+		keyspaces = retrieveKeyspaces();
 		
-		if(keyspaceLoggers == null){
-			keyspaceLoggers = new HashMap<String, Logger>();
-		}
-		
-		for(String keyspaceName : keyspaceNames){
+		exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
+		String keyspaces[] = retrieveKeyspaces();
+		keyspaceBatchStatements = new HashMap<String, List<com.datastax.driver.core.Statement>>();
+		keyspaceLoggers = new HashMap<String, Logger>();
+		sessions = new HashMap<String, Session>();
+		for(String keyspaceName : keyspaces){
 			if(!keyspaceLoggers.containsKey(keyspaceName)){
 				keyspaceLoggers.put(keyspaceName,  LoggerFactory.getLogger(KEYSPACE_LOGGER_PREFIX.concat(keyspaceName)));
 			}
+			if(!keyspaceBatchStatements.containsKey(keyspaceName)){
+				keyspaceBatchStatements.put(keyspaceName, new ArrayList<com.datastax.driver.core.Statement>(config.batchWrites));
+			}
 		}
 	}
-
+	
+	private String[] retrieveKeyspaces(){
+		List<String> keyspaces = new ArrayList<String>();
+		
+		if(config.getKeyspace() != null){
+			keyspaces.add(config.getKeyspace());
+		}
+		
+		List<RSToCqlConfig> rsToCqlConfigs = config.getRsToCqlConfigs();
+		for(RSToCqlConfig rsToCqlConfig : rsToCqlConfigs){
+			String keyspace = rsToCqlConfig.getKeyspace();
+			if(keyspace != null && !keyspaces.contains(keyspace)){
+				keyspaces.add(keyspace);
+			}
+		}
+		
+		return keyspaces.toArray(new String[keyspaces.size()]);
+	}
+	
+	private void connectToKeyspaces(){
+		cluster = CUtils.createCluster(config.getCassConfig());
+		
+		for(String keyspace : keyspaces){
+			sessions.put(keyspace, CUtils.createSession(cluster, keyspace));
+		}
+	}
+	
 	private Connection getJdbcConnection() throws SQLException, ClassNotFoundException{
 		if(config.getJdbcDriver() != null){
 			Class.forName(config.getJdbcDriver());
@@ -93,15 +126,15 @@ public class RSExecutor {
 	
 	public void execute() throws SQLException, ClassNotFoundException {
 		requestCount = 0l;
+		cqlRequestCount = 0l;
 		asyncResultsCount.set(0l);
 		
-		Connection conn = null;
-		Statement stmt = null;
-		ResultSet rs =  null;
+		logger.info("Configuration: " + config.toString());
 		
 		try{
+			connectToKeyspaces();
 			conn = getJdbcConnection();
-			
+			logger.info("Starting SQL execution: " + config.getSqlQuery() );
 			stmt = conn.createStatement(
 					ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			
@@ -115,78 +148,151 @@ public class RSExecutor {
 			//build the Row and RowtoMap
 			List<RowToCql> operationStatements = getOperationStatements(rs);
 			
-			ThreadPoolExecutor exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
 			while (rs.next()) {
 					if (requestCount++ % 1000 == 0){
 						logger.info("completed db rows: " + requestCount);
 					}
 
 					for (RowToCql row: operationStatements) {
-						final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
-						Session session = sessions.get(keyspace);
-						final String queryString = row.getStatement().buildQueryString();
-						
-						try{
-							if(config.asyncWrites){
-								final ResultSetFuture future = session.executeAsync(queryString);
-								future.addListener( new Runnable(){
-
-									@Override
-									public void run() {
-										try {
-											future.getUninterruptibly();
-										} catch (Throwable e) {
-											logger.error("Exception: " + e.getMessage() + "; keyspace: " + keyspace, e);
-											logFailedCql(keyspace, queryString);
-										} 
-										finally{
-											asyncResultsCount.incrementAndGet();
-										}
-									}
-
-								}, exec);
-							}else{
-								session.execute(queryString);
-							}
-						}catch (Exception e) {
-							logger.error("Exception writing to cassandra: " + e.getMessage() + "; keyspace: " + keyspace, e);
-							logFailedCql(keyspace, queryString);
-							
-						}
+						performCassandraExecution(row);
 					}
 			}
+			
+			cqlRequestCount = (requestCount * operationStatements.size());
+			processRemainingStatements();
 			
 			logger.info("completed: " + requestCount);
 			
-			if(config.asyncWrites){
-				long cqlRequestCount = (requestCount * operationStatements.size());
-				while(asyncResultsCount.get() < cqlRequestCount){
-					long processed = asyncResultsCount.get();
-					logger.info("Asynchronous tasks still processing, main thread sleeping for 60 seconds." 
-							+ " QueueSize: " + exec.getQueue().size() 
-							+ "; Active Thread Count: " + exec.getActiveCount() 
-							+ "; CQLRequestCount: " + cqlRequestCount
-							+ "; ResultCount: " + processed
-							+ "; Remaining Result Count: " + ( cqlRequestCount - processed ) );
-					
-					try {
-						Thread.sleep(60000);
-					} catch (InterruptedException e) {
-					}
-				}	
-			}
 		}finally{
-			close(rs);
-			close(stmt);
-			close(conn);
+			cleanup();
+		}
+	}
+	
+	public void cleanup(){
+		if(config.asyncWrites && !config.bypassCassandra){
+			
+			while(asyncResultsCount.get() < cqlRequestCount){
+				long processed = asyncResultsCount.get();
+				logger.info("Asynchronous tasks still processing, main thread sleeping for 60 seconds." 
+						+ " QueueSize: " + exec.getQueue().size() 
+						+ "; Active Thread Count: " + exec.getActiveCount() 
+						+ "; CQLRequestCount: " + cqlRequestCount
+						+ "; ResultCount: " + processed
+						+ "; Remaining Result Count: " + ( cqlRequestCount - processed ) );
+				
+				try {
+					Thread.sleep(60000);
+				} catch (InterruptedException e) {
+				}
+			}	
+		}
+		
+		cleanupDBResources();
+		cleanupCassandraResources();
+	}
+	
+	protected void performCassandraExecution(RowToCql row) throws SQLException{
+		
+		final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
+		
+		String queryString = row.getStatement().buildQueryString();
+		try{
+			boolean performBatchWrites = (config.batchWrites > 1);
+			boolean writeToCassandra = !performBatchWrites;
+			int batchSize = 1;
+			
+			List<com.datastax.driver.core.Statement> statementList = keyspaceBatchStatements.get(keyspace);
+			if(performBatchWrites){
+				statementList.add(new com.datastax.driver.core.SimpleStatement(queryString));
+				
+				batchSize = statementList.size();
+				if(batchSize == config.batchWrites){	
+					queryString = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize])).getQueryString();
+					statementList.clear();
+					writeToCassandra = true;
+				}
+			}
+			
+			if(writeToCassandra){
+				writeToCassandra(keyspace, queryString, batchSize);
+			}
+		}catch (Exception e) {
+			logger.error("Exception writing to cassandra: " + e.getMessage() + "; keyspace: " + keyspace, e);
+			logFailedCql(keyspace, queryString);
 		}
 	}
 
-	void logFailedCql(String keyspaceName, String queryString){
-		if(!queryString.trim().endsWith(";")){
-			queryString = queryString.concat(";");
+	protected void writeToCassandra(final String keyspace, final String queryString, final int batchSize){
+		if(config.bypassCassandra){
+			return;
 		}
 		
+		Session session = sessions.get(keyspace);
+		
+		if(config.asyncWrites){
+			final ResultSetFuture future = session.executeAsync(queryString);
+			future.addListener( new Runnable(){
+
+				@Override
+				public void run() {
+					try {
+						future.getUninterruptibly();
+					} catch (Throwable e) {
+						logger.error("Exception: " + e.getMessage() + "; keyspace: " + keyspace, e);
+						logFailedCql(keyspace, queryString);
+					} 
+					finally{
+						asyncResultsCount.addAndGet(batchSize);
+					}
+				}
+
+			}, exec);
+		}else{
+			session.execute(queryString);
+		}
+	}
+	
+	protected void processRemainingStatements() {
+		if(config.batchWrites > 1){
+			for(String keyspace : keyspaceBatchStatements.keySet()){
+				List<com.datastax.driver.core.Statement> statementList = keyspaceBatchStatements.get(keyspace);
+				int batchSize = statementList.size();
+				if(batchSize > 0){
+					String queryString = QueryBuilder.unloggedBatch(statementList.toArray(new com.datastax.driver.core.Statement[batchSize])).getQueryString();
+					statementList.clear();
+				
+					writeToCassandra(keyspace, queryString, batchSize);
+				}
+			}
+		}
+	}
+	
+	protected void logFailedCql(String keyspaceName, String queryString){
+		queryString = queryString.trim();
+		
+		if(config.getBatchWrites() > 1){
+			queryString = StringUtils.replace(queryString, "INSERT INTO", System.lineSeparator().concat("INSERT INTO"));
+			queryString = StringUtils.replace(queryString, "APPLY BATCH", System.lineSeparator().concat("APPLY BATCH"));
+			//syntax in batch statements cannot be applied via cqlsh as it is applied by cqldriver
+			BufferedReader reader = new BufferedReader(new StringReader(queryString));
+			
+			StringBuilder builder = new StringBuilder();
+			String line = null;
+			try {
+				while(( line = reader.readLine()) != null){
+					builder.append(StringUtils.removeEnd(line.trim(), ";"));
+					builder.append(System.lineSeparator());
+				}
+			} catch (IOException e) {
+			}
+			//remove last line separator character.
+			builder.deleteCharAt(builder.length()-1);
+			builder.append(";");
+			queryString =  builder.toString();
+		}else if(!queryString.endsWith(";")){
+			queryString = queryString.concat(";");	
+		}
+
 		keyspaceLoggers.get(keyspaceName).error(queryString);
 	}
 	
@@ -198,7 +304,21 @@ public class RSExecutor {
 		return asyncResultsCount;
 	}
 
-	public void close(ResultSet rs){
+	private void cleanupDBResources(){
+		close(rs);
+		close(stmt);
+		close(conn);
+	}
+	
+	private void cleanupCassandraResources(){
+		if(cluster != null){
+			logger.info("Shutting down the Cluster");
+			boolean isShutdown = cluster.shutdown(300000, TimeUnit.MILLISECONDS);
+			logger.info("Cluster Shutdown: " + isShutdown);
+		}
+	}
+	
+	protected void close(ResultSet rs){
 		if(rs != null){
 			try {
 				rs.close();
@@ -208,7 +328,7 @@ public class RSExecutor {
 		}
 	}
 	
-	public void close(Statement stmt){
+	protected void close(Statement stmt){
 		if(stmt != null){
 			try {
 				stmt.close();
@@ -218,7 +338,7 @@ public class RSExecutor {
 		}
 	}
 	
-	public void close(Connection connection){
+	protected void close(Connection connection){
 		if(connection != null){
 			try {
 				connection.close();

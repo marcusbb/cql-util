@@ -3,9 +3,6 @@ package migration;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -15,11 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.JAXBUtil;
-
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
-
-import driver.em.CUtils;
 
 public class Main {
 	//do this first to initialize jvm properties file into system properties
@@ -41,38 +33,16 @@ public class Main {
 	public void execute() throws Exception{
 		
 		XMLConfig config = (XMLConfig)JAXBUtil.unmarshalXmlFile(fileName, XMLConfig.class);
-		Cluster cluster = null;
-		
-		Map<String, Session> sessions = new HashMap<String, Session>();
 		
 		try{
-			
-			cluster = CUtils.createCluster(config.getCassConfig());
-			if(config.getKeyspace() != null){
-				sessions.put(config.getKeyspace(), CUtils.createSession(cluster, config.getKeyspace()));
-			}
-			
-			List<RSToCqlConfig> rsToCqlConfigs = config.getRsToCqlConfigs();
-			for(RSToCqlConfig rsToCqlConfig : rsToCqlConfigs){
-				String keyspace = rsToCqlConfig.getKeyspace();
-				if(keyspace != null && !sessions.containsKey(keyspace)){
-					sessions.put(keyspace, CUtils.createSession(cluster, keyspace));
-				}
-			}
-			
-			RSExecutor executor = new RSExecutor(config, sessions);
+			RSExecutor executor = new RSExecutor(config);
 			executor.execute();
-			
 		}
 		catch(Exception e){
 			logger.error("Exception in Main: " + e.getMessage(), e);
 		}finally{
 		
-			if(cluster != null){
-				logger.info("Shutting down the Cluster");
-				boolean isShutdown = cluster.shutdown(300000, TimeUnit.MILLISECONDS);
-				logger.info("Cluster Shutdown: " + isShutdown);
-			}
+			
 		}
 	}
 	

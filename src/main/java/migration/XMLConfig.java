@@ -30,6 +30,11 @@ public class XMLConfig {
 	
 	boolean asyncWrites;
 	
+	int batchWrites;
+	
+	//used for testing purposes only
+	boolean bypassCassandra;
+	
 	public String getSqlQuery() {
 		return sqlQuery;
 	}
@@ -109,12 +114,29 @@ public class XMLConfig {
 		this.asyncWrites = asyncWrites;
 	}
 
+	public int getBatchWrites() {
+		return batchWrites;
+	}
+
+	public void setBatchWrites(int batchWrites) {
+		this.batchWrites = batchWrites;
+	}
+
+	public boolean isBypassCassandra() {
+		return bypassCassandra;
+	}
+
+	public void setBypassCassandra(boolean bypassCassandra) {
+		this.bypassCassandra = bypassCassandra;
+	}
+
 	@Override
 	public String toString() {
 		return "XMLConfig [jdbcUrl=" + jdbcUrl + ", jdbcUsername="
 				+ jdbcUsername + ", jdbcDriver=" + jdbcDriver + ", sqlQuery="
 				+ sqlQuery + ", keyspace=" + keyspace + ", cassConfig="
 				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs
-				+ ", asyncWrites=" + asyncWrites + "]";
+				+ ", asyncWrites=" + asyncWrites + ", batchWrites="
+				+ batchWrites + ", bypassCassandra=" + bypassCassandra + "]";
 	}
 }
