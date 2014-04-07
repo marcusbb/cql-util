@@ -3,8 +3,11 @@ package reader.samples;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import reader.CQLRowReader;
-import reader.JobBootStrap;
+import reader.MTJobBootStrap;
 import reader.PKConfig;
 import reader.PKConfig.ColumnInfo;
 import reader.ReaderConfig;
@@ -12,6 +15,7 @@ import reader.ReaderJob;
 import reader.RowReaderTask;
 
 import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
@@ -24,6 +28,7 @@ public class DistinctCountJob extends ReaderJob<Object> {
 	final ColumnInfo colName;
 	final Integer threshold;
 	ConcurrentHashMap<Object,AtomicInteger> rowCount = new ConcurrentHashMap<>();
+	private static Logger logger = LoggerFactory.getLogger(DistinctCountJob.class);
 	
 	public DistinctCountJob(ColumnInfo colName,Integer threshold) {
 		this.colName = colName;
@@ -57,19 +62,21 @@ public class DistinctCountJob extends ReaderJob<Object> {
 
 	}
 
+	//TODO: bug that is not calling
 	@Override
-	public void processResult(Object obj) {
-		if (rowCount.putIfAbsent(obj, new AtomicInteger(1)) != null) {
-			rowCount.get(obj).getAndIncrement();
+	public void processResult(Object colObj) {
+
+		if (rowCount.putIfAbsent(colObj, new AtomicInteger(1)) != null) {
+			rowCount.get(colObj).getAndIncrement();
 		}
-		
 	}
 	
-	public static class DistinctCountBatchJob extends JobBootStrap {
+	public static class DistinctCountBatchJob extends MTJobBootStrap {
 
 		final ColumnInfo colName;
 		final Integer threshold;
-		public DistinctCountBatchJob(ColumnInfo colName,Integer threshold) {
+		public DistinctCountBatchJob(ColumnInfo colName,Integer threshold,int numThreads) {
+			super(numThreads);
 			this.colName = colName;
 			this.threshold = threshold;
 		}
@@ -78,12 +85,39 @@ public class DistinctCountJob extends ReaderJob<Object> {
 			return new DistinctCountJob(colName, threshold);
 		}
 		
+		public static void main(String []args) {
+			String colName = args[0];
+			int threshold = Integer.parseInt(args[1]);
+			int threads = 1;
+			if (args.length >= 2)
+				threads = Integer.parseInt(args[2]);
+			
+			ColumnInfo colInfo = new ColumnInfo(colName, DataType.ascii());
+			
+			DistinctCountBatchJob job = new DistinctCountBatchJob(colInfo, threshold,threads);
+			
+			job.bootstrap();
+			
+			job.runJob();
+			
+		}
 	}
 
+	
 	@Override
 	public void onReadComplete() {
-		// TODO Auto-generated method stub
 		
+		logger.info("#########################################################");
+		logger.info("#Summary##################################################");
+		logger.info("#########################################################");
+		for (Object rowObj:rowCount.keySet()) {
+			AtomicInteger size = rowCount.get(rowObj);
+			if (size.intValue() >= threshold) {
+				logger.info("col[{}],size[{}]",rowObj,size.intValue());
+			}
+		}
+		logger.info("#########################################################");
 	}
 
+	
 }
