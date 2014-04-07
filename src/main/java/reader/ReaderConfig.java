@@ -8,8 +8,9 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import reader.PKConfig.ColumnInfo;
+import com.datastax.driver.core.ConsistencyLevel;
 
+import reader.PKConfig.ColumnInfo;
 import driver.em.CassConfig;
 
 
@@ -39,6 +40,8 @@ public class ReaderConfig implements Serializable {
 	private int numThreads = -1;
 	
 	private TokenRange []tokenRanges;
+	
+	private ConsistencyLevel consistencyLevel = ConsistencyLevel.ONE;
 	
 	public static class TokenRange {
 		
@@ -164,6 +167,13 @@ public class ReaderConfig implements Serializable {
 
 	public void setTokenRanges(TokenRange[] tokenRanges) {
 		this.tokenRanges = tokenRanges;
+	}
+	public ConsistencyLevel getConsistencyLevel() {
+		return consistencyLevel;
+	}
+
+	public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+		this.consistencyLevel = consistencyLevel;
 	}
 
 	@Override

@@ -13,6 +13,7 @@ import reader.PKConfig.ColumnInfo;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.ResultSet;
@@ -114,6 +115,7 @@ public class CQLRowReader {
 			
 			String cql = generateSelectPrefix(startToken,endToken) ;
 			SimpleStatement ss = new SimpleStatement( cql  );
+			ss.setConsistencyLevel(config.getConsistencyLevel());
 			if (routeKey != null) 
 				ss.setRoutingKey(routeKey);
 			//ss.setRoutingKey(routeKey);
@@ -193,9 +195,12 @@ public class CQLRowReader {
 			}catch (QueryTimeoutException e) {
 				logger.error(e.getMessage(),e);
 				startToken++;
-			}catch (NoHostAvailableException e) {
+			}catch (NoHostAvailableException  e) {
 				logger.error(e.getMessage(),e);
 				//not much I can do with this
+				throw e;
+			}catch (Exception e) {
+				logger.error(e.getMessage(),e);
 				throw e;
 			}
 		}
