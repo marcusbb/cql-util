@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-
 import org.slf4j.Logger;
 
 import reader.PKConfig.ColumnInfo;
@@ -95,6 +94,7 @@ public class CQLRowReader {
 		read(startToken,endToken);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void read(final Long startOfToken,final Long endToken) {
 		boolean more = true;
 		
@@ -114,9 +114,10 @@ public class CQLRowReader {
 			
 			String cql = generateSelectPrefix(startToken,endToken) ;
 			SimpleStatement ss = new SimpleStatement( cql  );
-			
+			if (routeKey != null) 
+				ss.setRoutingKey(routeKey);
 			//ss.setRoutingKey(routeKey);
-			logger.info("Executing cql: {} , routeKey: {} " ,cql, startToken);
+			logger.debug("Executing cql: {} , routeKey: {} " ,cql, startToken);
 			try {
 			ResultSet rs = session.execute(ss);
 			
@@ -152,10 +153,12 @@ public class CQLRowReader {
 				//internal count 
 				totalReadCount++;
 				curReadCount++;
-				
+				//set next route key
+				routeKey = getRouteKey(row);
 				try {
-					RowReaderTask rr =  job.newTask();
-					rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+					RowReaderTask<?> rr =  job.newTask();
+					Object ret = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+					job.processResult(ret);
 				}catch (Exception e) {
 					//will have been caught above
 					logger.error(e.getMessage(), e);
@@ -181,7 +184,7 @@ public class CQLRowReader {
 				startToken++;
 			}
 			lastIdSet = curIdSet;
-			logger.info("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
+			logger.debug("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
 			//Added a catch-all
 			//which will likely be caused by the session.execute above
 			}catch (ReadTimeoutException e) {
