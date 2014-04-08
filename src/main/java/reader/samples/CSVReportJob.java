@@ -81,27 +81,48 @@ public class CSVReportJob extends ReaderJob<Void> {
 		final File dest;
 		final static char[] delimch = {0x7f};
 		final static String delim = new String(delimch);
+		String delimiter = null;
 		
 		public Main(int nThreads,File dest,String delim) {
 			super(nThreads);
 			this.dest = dest;
+			this.delimiter = delim;
 			
 			
 		}
 
 		public static void main(String []args) {
 			//System.setProperty("config", "perf-reader-config.xml");
-			File f = new File("output.csv");
-			Main boot = new Main(10,f,delim);
-			boot.bootstrap();
-			boot.runJob();
+			try {
+				int threads = 1;
+				String fileName = "output.csv";
+				String delimiter = delim;
+				
+				if (args.length >= 1)
+					fileName = args[0];
+				if (args.length >= 2)
+					threads = Integer.parseInt(args[1]);
+				if (args.length >= 3)
+					delimiter = args[2];
+				
+				File f = new File(fileName);
+				Main boot = new Main(threads,f,delimiter);
+				boot.bootstrap();
+				boot.runJob();
+			}catch (Exception e) {
+				e.printStackTrace();
+				usage();
+			}
 			
+		}
+		private static void usage() {
+			System.out.println(String.format("java %s [threads] [outputFile] [delimiter]",Main.class.getName()));
 		}
 
 		@Override
 		public ReaderJob<?> initJob(ReaderConfig readerConfig)  {
 		try {
-			return new CSVReportJob(dest,delim);
+			return new CSVReportJob(dest,delimiter);
 		}catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
