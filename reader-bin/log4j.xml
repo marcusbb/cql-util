@@ -14,7 +14,7 @@
 		<param name="File" value="reader.log" />
 		<param name="Append" value="true" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="conversionPattern" value="%d %-5p %c{1} - %m%n" />
+			<param name="conversionPattern" value="%d %-5p t:%t %c{1} - %m%n" />
 		</layout>
 
 	</appender> 
@@ -37,7 +37,7 @@
     </logger>
 	//-->
 	<root>
-		<priority value="info" />
+		<priority value="debug" />
 		
 		<appender-ref ref="file" />
 	</root>

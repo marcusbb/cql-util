@@ -13,5 +13,7 @@ localJar=driver-util-all.jar
 if [ ! -f "$localJar" ]; then
 	wget -O $localJar http://10.236.54.3:7001/job/CQL-util/ws/target/$jarName
 fi
-
-java -cp .:$localJar -Xmx2G reader.samples.CSVReportJob\$Main report.csv 5 "|"
+delim="		"
+filename="report.csv"
+threads=1
+java -cp .:$localJar -Xmx2G reader.samples.CSVReportJob\$Main $filename $threads "$delim"

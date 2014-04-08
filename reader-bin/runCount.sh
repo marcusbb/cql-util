@@ -13,5 +13,7 @@ localJar=driver-util-all.jar
 if [ ! -f "$localJar" ]; then
 	wget -O $localJar http://10.236.54.3:7001/job/CQL-util/ws/target/$jarName
 fi
-
-java -cp .:$localJar -Xmx2G reader.samples.DistinctCountJob\$DistinctCountBatchJob device_id 30 10
+colname="device_id"
+print_threshold=30
+threads=20
+java -cp .:$localJar -Xmx2G reader.samples.DistinctCountJob\$DistinctCountBatchJob $colname $print_threshold $threads
