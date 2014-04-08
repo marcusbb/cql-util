@@ -11,10 +11,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
-
-import driver.em.CUtils;
 import reader.ReaderConfig.TokenRange;
 
 public abstract class MTJobBootStrap extends JobBootStrap {
@@ -40,7 +36,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	public MTJobBootStrap(int nThreads) {
 		this.nThreads = nThreads;
 		
-		executor = Executors.newFixedThreadPool(nThreads);
+		executor = Executors.newFixedThreadPool(nThreads,new TPFactory());
 		
 	}
 
