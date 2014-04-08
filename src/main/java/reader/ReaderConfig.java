@@ -68,6 +68,13 @@ public class ReaderConfig implements Serializable {
 		public void setEndToken(Long endToken) {
 			this.endToken = endToken;
 		}
+
+		@Override
+		public String toString() {
+			return "TokenRange [startToken=" + startToken + ", endToken="
+					+ endToken + "]";
+		}
+		
 		
 		
 	}

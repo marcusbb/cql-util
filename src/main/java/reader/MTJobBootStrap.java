@@ -8,11 +8,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
-
 import reader.ReaderConfig.TokenRange;
 
 public abstract class MTJobBootStrap extends JobBootStrap {
@@ -20,6 +22,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	protected ExecutorService executor;
 	
 	protected AtomicLong totalRows = new AtomicLong(0);
+	private static Logger logger = LoggerFactory.getLogger(MTJobBootStrap.class);
 	
 	static class TPFactory implements ThreadFactory {
 		AtomicInteger index = new AtomicInteger(1);
@@ -64,7 +67,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 			
 		}
 		config.setTokenRanges(rangeList.toArray(new TokenRange[0]));
-		
+		logger.info("Split token ranges {}",rangeList);
 		
 	}
 
