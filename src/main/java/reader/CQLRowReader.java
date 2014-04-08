@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,20 +12,17 @@ import reader.PKConfig.ColumnInfo;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
-import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.QueryTimeoutException;
 import com.datastax.driver.core.exceptions.ReadTimeoutException;
 
 import driver.em.CUtils;
-import driver.em.CassConfig;
 import driver.em.Composite;
 
 public class CQLRowReader {
@@ -213,6 +209,7 @@ public class CQLRowReader {
 	//The pageSize is less than the size of the row, so we must 
 	//resort to using paging via the cluster key
 	//via assumes that the cluster key is ASC otherwise this logic may not work
+	@SuppressWarnings("unchecked")
 	protected void readWide(Row startRow) {
 		
 		Object partKey = get(startRow,config.getPkConfig().getPartitionKeys()[0]);
@@ -345,10 +342,14 @@ public class CQLRowReader {
 	}
 	private String prepareWide(boolean inclusiveGT,int limit) {
 		StringBuilder builder = new StringBuilder("SELECT  " );
-		
-		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
+		builder.append(getTokenStr()).append(",");
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			builder.append(colinfo.name).append(",");
 		}
+		if (config.getPkConfig().getClusterKeys() != null)
+			for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
+				builder.append(colinfo.name).append(",");
+			}
 		if (config.getOtherCols() != null)
 			for (String other:config.getOtherCols()) {
 				builder.append(other).append(",");
@@ -370,23 +371,16 @@ public class CQLRowReader {
 	
 	private String generateSelectPrefix(long startToken, long endToken) {
 		StringBuilder builder = new StringBuilder("SELECT ");
-		StringBuilder tokenPart = new StringBuilder("token(");
-		int i = 0;
-		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
-			tokenPart.append(colinfo.name);
-			if (i<config.getPkConfig().getPartitionKeys().length -1)
-				tokenPart.append(", ");
-
-		}
-		tokenPart.append(") ");
+		StringBuilder tokenPart = getTokenStr();
 		builder.append(tokenPart).append(", ");
 		
 		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
 			builder.append(colinfo.name).append(",");
 		}
-		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
-			builder.append(colinfo.name).append(",");
-		}
+		if (config.getPkConfig().getClusterKeys() != null)
+			for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
+				builder.append(colinfo.name).append(",");
+			}
 		if (config.getOtherCols() != null)
 			for (String other:config.getOtherCols()) {
 				builder.append(other).append(",");
@@ -400,6 +394,18 @@ public class CQLRowReader {
 			.append(" limit " + config.getPageSize() );
 		return builder.toString();
 		
+	}
+	private StringBuilder getTokenStr() {
+		StringBuilder tokenPart = new StringBuilder("token(");
+		int i = 0;
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
+			tokenPart.append(colinfo.name);
+			if (i<config.getPkConfig().getPartitionKeys().length -1)
+				tokenPart.append(", ");
+
+		}
+		tokenPart.append(") ");
+		return tokenPart;
 	}
 	
 	public Long getTotalReadCount() {
