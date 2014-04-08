@@ -200,8 +200,9 @@ public class CQLRowReader {
 				//not much I can do with this
 				throw e;
 			}catch (Exception e) {
+				logger.error("error during execution {}", cql);
 				logger.error(e.getMessage(),e);
-				throw e;
+				//throw e;
 			}
 		}
 		logger.info("##Complete Read Total: {} ", totalReadCount);
@@ -222,7 +223,7 @@ public class CQLRowReader {
 		//increment
 		while (more) {
 			String cql = generateWide(partKey, clusterKey, false,config.getPageSize());
-			logger.info("Excuting cql: {}", cql);
+			logger.debug("Excuting cql: {}", cql);
 			ResultSet rs = session.execute(cql);
 			List<Row> allRows = rs.all();
 			if (allRows.size() == 0)
@@ -233,8 +234,10 @@ public class CQLRowReader {
 					clusterKey = get(row,config.getPkConfig().getClusterKeys()[0]);
 					try {
 						RowReaderTask rr = job.newTask();
-						rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+						Object result = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+						job.processResult(result);
 					}catch (Exception e) {
+						logger.error("error during execution {}", cql);
 						//we will be changing how tasks are instantiated
 						logger.error(e.getMessage(), e);
 					}
