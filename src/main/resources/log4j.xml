@@ -5,16 +5,16 @@
 	<appender name="console" class="org.apache.log4j.ConsoleAppender">
 		<param name="Target" value="System.out" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%-5p %c{1} - %m%n" />
+			<param name="ConversionPattern" value="%-5p t:%t %c{1} - %m%n" />
 		</layout>
 	</appender>
 
 	<appender name="file" class="org.apache.log4j.FileAppender">
 
-		<param name="File" value="reader.log" />
+		<param name="File" value="z-reader.log" />
 		<param name="Append" value="true" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="conversionPattern" value="%d %-5p %c{1} - %m%n" />
+			<param name="conversionPattern" value="%d %-5p t:%t %c{1} - %m%n" />
 		</layout>
 
 	</appender> 
@@ -37,7 +37,7 @@
     </logger>
 	//-->
 	<root>
-		<priority value="info" />
+		<priority value="debug" />
 		<appender-ref ref="console" />
 		<appender-ref ref="file" />
 	</root>
