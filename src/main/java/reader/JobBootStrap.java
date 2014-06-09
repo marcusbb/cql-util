@@ -6,6 +6,7 @@ import java.util.concurrent.Executor;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
@@ -49,13 +50,16 @@ public abstract class JobBootStrap {
 			if (ins == null)
 				throw new IllegalArgumentException("File from classpath: " + configFile + " not found");
 			config = (ReaderConfig)unmarshaller.unmarshal(ins);
+			Marshaller marshaller = jc.createMarshaller();
+			System.out.print("Config: ");
+			marshaller.marshal(config, System.out);
 			//discover the pk information:
 			
 		}catch (ClassNotFoundException e) {
 			logger.error(e.getMessage(),e);
 			logger.error("Unrecoverable error Reader config class {} is unrecognizable " + configClass);
 			System.exit(1);
-		} catch (JAXBException e) {
+		} catch (Exception e) {
 			logger.error(e.getMessage(),e);
 			logger.error("Unrecoverable error reading configuration, please make sure reader-config.xml is valid and readable");
 			System.exit(1);
