@@ -16,6 +16,8 @@ import reader.PKConfig.ColumnInfo;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ColumnMetadata;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.TableMetadata;
 
 import driver.em.CUtils;
 
@@ -50,9 +52,10 @@ public abstract class JobBootStrap {
 			if (ins == null)
 				throw new IllegalArgumentException("File from classpath: " + configFile + " not found");
 			config = (ReaderConfig)unmarshaller.unmarshal(ins);
-			Marshaller marshaller = jc.createMarshaller();
-			System.out.print("Config: ");
-			marshaller.marshal(config, System.out);
+			//something is not quite right here
+			//Marshaller marshaller = jc.createMarshaller();
+			//System.out.print("Config: ");
+			//marshaller.marshal(config, System.out);
 			//discover the pk information:
 			
 		}catch (ClassNotFoundException e) {
@@ -67,13 +70,18 @@ public abstract class JobBootStrap {
 		this.cluster = CUtils.createCluster(config.getCassConfig());
 		job = initJob(config);
 		
-				
+		Session s = cluster.connect("system");
+		//s.execute("select * from schema_columns");
+		//s.execute("select * from schema_columns");
+		
 		//Not sure the dynamic configuration works yet
-		/*List<ColumnMetadata> colMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getPartitionKey();
-		List<ColumnMetadata> colClusMeta = reader.cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
+		TableMetadata tbm = cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable());
+		List<ColumnMetadata> colMeta = tbm.getPartitionKey();
+		
+		List<ColumnMetadata> colClusMeta = cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
 		
 		ColumnInfo []partitionCols = new ColumnInfo[colMeta.size()];
-		ColumnInfo []clusterCols = new ColumnInfo[colMeta.size()];
+		ColumnInfo []clusterCols = new ColumnInfo[colClusMeta.size()];
 		
 		int i = 0;
 		for (ColumnMetadata col:colMeta) {
@@ -83,8 +91,9 @@ public abstract class JobBootStrap {
 		for (ColumnMetadata col:colClusMeta) {
 			clusterCols[i++] = new ColumnInfo(col);
 		}
+		
 		config.getPkConfig().setPartitionKeys(partitionCols);
-		config.getPkConfig().setClusterKeys(clusterCols);*/
+		config.getPkConfig().setClusterKeys(clusterCols);
 		
 		if (startToken!=null)
 			config.setStartToken(Long.parseLong(startToken));

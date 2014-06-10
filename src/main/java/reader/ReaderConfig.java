@@ -23,7 +23,7 @@ public class ReaderConfig implements Serializable {
 	
 	private String table;
 	
-	private PKConfig pkConfig;
+	private PKConfig pkConfig = new PKConfig();
 	
 	private String []otherCols;
 	

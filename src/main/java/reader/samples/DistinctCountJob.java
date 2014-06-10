@@ -93,10 +93,14 @@ public class DistinctCountJob extends ReaderJob<Object> {
 				threads = Integer.parseInt(args[2]);
 			
 			ColumnInfo colInfo = new ColumnInfo(colName, DataType.ascii());
-			
+			//hack for now, until we think properly providing the job configuration
+			if (colName.equals("column1"))
+				colInfo = new ColumnInfo("column1", DataType.bigint());
 			DistinctCountBatchJob job = new DistinctCountBatchJob(colInfo, threshold,threads);
 			
 			job.bootstrap();
+			
+			//job.config.getPkConfig().getPartitionKeys()
 			
 			job.runJob();
 			

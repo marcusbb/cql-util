@@ -20,21 +20,38 @@
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
 	<keyspace>icrs</keyspace>
-	<table>device_advertised_services</table>
+	<table>DESTINATION_MESSAGE_INDEX</table>
 	<pageSize>1000</pageSize>
-	<pkConfig>
-		<partitionKeys>
-			<name>device_id</name>
-			<type>ASCII</type>
-		</partitionKeys>
-		<clusterKeys>
-			<name>name</name>
-			<type>ASCII</type>
-		</clusterKeys>
-		<clusterKeys>
-			<name>type</name>
-			<type>ASCII</type>
-		</clusterKeys>
-	</pkConfig>
-	<otherCols>value</otherCols>
+	
+	
+        <pageSize>1000</pageSize>
+        <!-- Configurable start and end token -->
+        <startToken>329406144173391000</startToken>
+        <endToken>381232710856662000</endToken>
+        <!-- Consistency default is one
+        <consistencyLevel>ONE</consistencyLevel>
+         -->
+        <!-- Define the partition and cluster key: required for now, but can be discovered -->
+        <pkConfig>
+                <partitionKeys>
+                        <name>key</name>
+                        <type>ASCII</type>
+                </partitionKeys>
+                <clusterKeys>
+                        <name>column1</name>
+                        <type>INTEGER</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column2</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column3</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column4</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+        </pkConfig>
 </config>
