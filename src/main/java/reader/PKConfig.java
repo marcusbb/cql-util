@@ -38,8 +38,9 @@ public class PKConfig {
 			this.type = type;
 		}
 		String name;
-		@XmlTransient
+		
 		DataType type;
+		@XmlTransient
 		public DataType getType() {
 			return type;
 		}
