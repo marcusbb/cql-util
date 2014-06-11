@@ -44,17 +44,17 @@ public class CSVReportJob extends ReaderJob<Void> {
 			public Void process(Row row, ColumnDefinitions colDefs,
 					ExecutionInfo execInfo) {
 				try {
+					StringBuilder builder = new StringBuilder();
 					
-					synchronized(fileWriteLock) {
-						for (ColumnDefinitions.Definition def:colDefs) {
-							Object obj = CQLRowReader.get(row, def);
-							if (obj != null) {
-								fout.write(obj.toString().getBytes());
-							}
-							fout.write(delim.getBytes());
+					for (ColumnDefinitions.Definition def:colDefs) {
+						Object obj = CQLRowReader.get(row, def);
+						if (obj != null) {
+							builder.append(obj.toString().getBytes());
 						}
-						fout.write(newLine);
+						builder.append(delim.getBytes());
 					}
+					builder.append(newLine);
+					fout.write(builder.toString().getBytes());
 				}catch (Exception e) {
 					e.printStackTrace();
 					throw new RuntimeException(e);
