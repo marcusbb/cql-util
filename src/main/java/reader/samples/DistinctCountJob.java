@@ -127,6 +127,7 @@ public class DistinctCountJob extends ReaderJob<Object> {
 		logger.info("#########################################################");
 		logger.info("#Summary##################################################");
 		logger.info("#########################################################");
+		logger.info("Total distinct {}={}",colName.getName(), rowCount.size() );
 		for (Object rowObj:rowCount.keySet()) {
 			AtomicInteger size = rowCount.get(rowObj);
 			if (size.intValue() >= threshold) {
