@@ -25,13 +25,13 @@ public class DistinctCountJob extends ReaderJob<Object> {
 	 * 
 	 */
 	private static final long serialVersionUID = 1456068572420793553L;
-	final ColumnInfo colName;
+	ColumnInfo colName;
 	final Integer threshold;
 	ConcurrentHashMap<Object,AtomicInteger> rowCount = new ConcurrentHashMap<>();
 	private static Logger logger = LoggerFactory.getLogger(DistinctCountJob.class);
 	
-	public DistinctCountJob(ColumnInfo colName,Integer threshold) {
-		this.colName = colName;
+	public DistinctCountJob(Integer threshold) {
+		
 		this.threshold = threshold;
 	}
 	@Override
@@ -73,16 +73,19 @@ public class DistinctCountJob extends ReaderJob<Object> {
 	
 	public static class DistinctCountBatchJob extends MTJobBootStrap {
 
-		final ColumnInfo colName;
+		//The column to form the count around
+		ColumnInfo colName;
 		final Integer threshold;
-		public DistinctCountBatchJob(ColumnInfo colName,Integer threshold,int numThreads) {
+		DistinctCountJob job = null;
+		public DistinctCountBatchJob(Integer threshold,int numThreads) {
 			super(numThreads);
-			this.colName = colName;
+			//this.colName = colName;
 			this.threshold = threshold;
 		}
 		@Override
 		public ReaderJob<?> initJob(ReaderConfig readerConfig) {
-			return new DistinctCountJob(colName, threshold);
+			
+			return job;
 		}
 		
 		public static void main(String []args) {
@@ -93,16 +96,26 @@ public class DistinctCountJob extends ReaderJob<Object> {
 				threads = Integer.parseInt(args[2]);
 			
 			ColumnInfo colInfo = new ColumnInfo(colName, DataType.ascii());
-			//hack for now, until we think properly providing the job configuration
-			if (colName.equals("column1"))
-				colInfo = new ColumnInfo("column1", DataType.bigint());
-			DistinctCountBatchJob job = new DistinctCountBatchJob(colInfo, threshold,threads);
+			//think about this renaming some classes with reference to a batch job, vs job			
+			DistinctCountBatchJob batchJob = new DistinctCountBatchJob( threshold,threads);
+			batchJob.job = new DistinctCountJob(threshold);
 			
-			job.bootstrap();
+			batchJob.bootstrap();
+			//After boostrap we should now have the necessary configuration			
+			ColumnInfo[] partKeys = batchJob.config.getPkConfig().getPartitionKeys();
+			ColumnInfo[] clustKeys = batchJob.config.getPkConfig().getClusterKeys();
+			for (ColumnInfo ci:partKeys) {
+				if (ci.getName().equals(colName))
+					colInfo = new ColumnInfo(colName, ci.getType());
+			}
+			for (ColumnInfo ci:clustKeys) {
+				if (ci.getName().equals(colName))
+					colInfo = new ColumnInfo(colName, ci.getType());
+			}
+				
+			batchJob.job.colName = colInfo;
 			
-			//job.config.getPkConfig().getPartitionKeys()
-			
-			job.runJob();
+			batchJob.runJob();
 			
 		}
 	}
