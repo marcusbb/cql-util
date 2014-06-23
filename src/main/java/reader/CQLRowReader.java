@@ -198,7 +198,7 @@ public class CQLRowReader {
 			}catch (Exception e) {
 				logger.error("error during execution {}", cql);
 				logger.error(e.getMessage(),e);
-				//throw e;
+				throw e;
 			}
 		}
 		logger.info("##Complete Read Total: {} ", totalReadCount);
@@ -289,6 +289,8 @@ public class CQLRowReader {
 			ret = row.getInt(info.name); 
 		else if (DataType.uuid().equals(info.type))
 			ret = row.getUUID(info.name); 
+		else if (DataType.timeuuid().equals(info.type))
+			ret = row.getUUID(info.name);
 		return ret;
 	}
 	public static Object get(Row row, ColumnDefinitions.Definition colDefinition) {
