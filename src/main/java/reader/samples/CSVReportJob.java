@@ -29,7 +29,8 @@ public class CSVReportJob extends ReaderJob<Void> {
 	private static final long serialVersionUID = 2813562426255630201L;
 	final FileOutputStream fout;
 	final String delim;
-	static byte[] newLine = "\n".getBytes();
+	static String newLine = "\n";
+	static byte[] newLineb = "\n".getBytes();
 	final static Object fileWriteLock = new Object();
 	
 	public CSVReportJob(File dest,String delim) throws IOException {
@@ -49,9 +50,10 @@ public class CSVReportJob extends ReaderJob<Void> {
 					for (ColumnDefinitions.Definition def:colDefs) {
 						Object obj = CQLRowReader.get(row, def);
 						if (obj != null) {
-							builder.append(obj.toString().getBytes());
+							//System.out.print("col: " +obj );
+							builder.append(obj.toString());
 						}
-						builder.append(delim.getBytes());
+						builder.append(delim);
 					}
 					builder.append(newLine);
 					fout.write(builder.toString().getBytes());
@@ -80,7 +82,7 @@ public class CSVReportJob extends ReaderJob<Void> {
 		
 		final File dest;
 		final static char[] delimch = {0x7f};
-		final static String delim = new String(delimch);
+		final static String delim = "\t";//new String(delimch);
 		String delimiter = null;
 		
 		public Main(int nThreads,File dest,String delim) {
