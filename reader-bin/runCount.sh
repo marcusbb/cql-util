@@ -6,7 +6,7 @@
 
 #first download the latest
 #the current jar is built in a Jenkins Altus node
-version=0.4.2
+version=0.5.1
 jarName=driver-util-$version-SNAPSHOT-all-dep.jar
 localJar=driver-util-all.jar
 
