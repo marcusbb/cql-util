@@ -41,10 +41,8 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	}
 
 	
-	@Override
-	protected void bootstrap() {
-		super.bootstrap();
-		
+	private void splitRanges() {
+
 		
 		long delta = (config.getEndToken()/2 - config.getStartToken()/2)/nThreads *2;
 		long next = config.getStartToken();
@@ -64,9 +62,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		}
 		config.setTokenRanges(rangeList.toArray(new TokenRange[0]));
 		logger.info("Split token ranges {}",rangeList);
-		
 	}
-
 
 	/**
 	 * Multi threaded execution: One thread per reader.
@@ -76,7 +72,7 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	public void runJob() {
 		if (!initialized)
 			throw new IllegalArgumentException("Uninitialized bootstrap");
-		
+		splitRanges();
 		for (int i=0;i<nThreads;i++) {
 			
 			final ReaderConfig.TokenRange[] tokenRanges = config.getTokenRanges();

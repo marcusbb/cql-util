@@ -20,14 +20,13 @@
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
 	<keyspace>icrs</keyspace>
-	<table>destination_message_index</table>
+	<table>device_advertised_services</table>
 	<pageSize>1000</pageSize>
 	
 	
         <pageSize>1000</pageSize>
         <!-- Configurable start and end token -->
-        <startToken>329406144173391000</startToken>
-        <endToken>381232710856662000</endToken>
+       
         <!-- Consistency default is one
         <consistencyLevel>ONE</consistencyLevel>
          -->
@@ -54,4 +53,5 @@
                         <type>ASCII</type>
                 </clusterKeys>
         </pkConfig> -->
+        
 </config>

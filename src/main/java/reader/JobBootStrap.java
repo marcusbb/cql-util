@@ -2,11 +2,9 @@ package reader;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
@@ -21,6 +19,14 @@ import com.datastax.driver.core.TableMetadata;
 
 import driver.em.CUtils;
 
+
+/**
+ * Bootstrap is a once only operation, like a builder operation
+ * 
+ *  but also connects to the cluster and discovers meta data\
+ *  
+ */
+
 public abstract class JobBootStrap {
 
 	static Logger logger = LoggerFactory.getLogger(JobBootStrap.class);
@@ -30,10 +36,31 @@ public abstract class JobBootStrap {
 	protected ReaderJob<?> job;
 	protected Cluster cluster;
 	protected volatile boolean initialized = false;
+	protected final static String DEF_CONFIG = "reader-config.xml";
 	
 	/**
-	 * Should only be called once, can add checking but 
-	 * developers should use common sense.
+	 * Bootstrap with a given inputstream
+	 * @param stream
+	 * @throws JAXBException 
+	 * @throws ClassNotFoundException 
+	 */
+	public void bootstrap(String configClass, InputStream stream) throws ClassNotFoundException, JAXBException  {
+		JAXBContext jc = JAXBContext.newInstance(Class.forName(configClass));
+		Unmarshaller unmarshaller = jc.createUnmarshaller();
+		this.config = (ReaderConfig)unmarshaller.unmarshal(stream);
+		doBoostrap(this.config);
+	}
+	/**
+	 * 
+	 * @param config
+	 */
+	public void bootstrap(ReaderConfig config) {
+		doBoostrap(config);
+		this.config = config;
+	}
+	
+	/**
+	 * 
 	 */
 	protected void bootstrap() {
 		String configFile = System.getProperty("config");
@@ -41,7 +68,7 @@ public abstract class JobBootStrap {
 		String endToken = System.getProperty("endToken");
 		String configClass = System.getProperty("configClass");
 		if (configFile == null)
-			configFile = "reader-config.xml";
+			configFile = DEF_CONFIG;
 		if (configClass == null)
 			configClass = ReaderConfig.class.getName();
 		
@@ -67,9 +94,48 @@ public abstract class JobBootStrap {
 			logger.error("Unrecoverable error reading configuration, please make sure reader-config.xml is valid and readable");
 			System.exit(1);
 		} 
-		this.cluster = CUtils.createCluster(config.getCassConfig());
-		job = initJob(config);
 		
+		
+		if (startToken!=null)
+			config.setStartToken(Long.parseLong(startToken));
+		if (endToken!=null)
+			config.setEndToken(Long.parseLong(endToken));
+		
+		doBoostrap(this.config);
+		
+
+	}
+	
+	/**
+	 * Create connection to the cluster, discover meta data
+	 * and validate
+	 * 
+	 * @param config
+	 */
+	private void doBoostrap(ReaderConfig config) {
+		this.cluster = CUtils.createCluster(config.getCassConfig());
+		this.job = initJob(config);
+		validate(config);
+		discover(config);
+		initialized = true;
+		
+	}
+	/**
+	 * Much of the validation can be caught in an xslt if one is to be provided
+	 */
+	private void validate(ReaderConfig config) {
+		if (config == null)
+			throw new IllegalArgumentException("ReaderConfig must not be null");
+		if (config.getCassConfig() == null)
+			throw new IllegalArgumentException("ReaderConfig.cassconfig cannot be null ");
+		if (config.getKeyspace() == null)
+			throw new IllegalArgumentException("ReaderConfig.keyspace cannot be null ");
+		
+		if (config.getTable() == null)
+			throw new IllegalArgumentException("ReaderConfig.table cannot be null");
+			
+	}
+	private void discover(ReaderConfig config) {
 		Session s = cluster.connect("system");
 		//s.execute("select * from schema_columns");
 		//s.execute("select * from schema_columns");
@@ -95,13 +161,7 @@ public abstract class JobBootStrap {
 		config.getPkConfig().setPartitionKeys(partitionCols);
 		config.getPkConfig().setClusterKeys(clusterCols);
 		
-		if (startToken!=null)
-			config.setStartToken(Long.parseLong(startToken));
-		if (endToken!=null)
-			config.setEndToken(Long.parseLong(endToken));
 		
-		initialized = true;
-
 	}
 	
 	public void runJob() {

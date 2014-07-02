@@ -157,9 +157,12 @@ public class CQLRowReader {
 					RowReaderTask<?> rr =  job.newTask();
 					Object ret = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 					job.processResult(ret);
-				}catch (Exception e) {
+				}
+				catch (Exception e) {
 					//will have been caught above
 					logger.error(e.getMessage(), e);
+					//bail out on client error
+					throw new RuntimeException( e );
 				}
 			}
 			 

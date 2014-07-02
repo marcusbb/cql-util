@@ -17,7 +17,12 @@ import driver.em.CassConfig;
 @XmlRootElement(name="config")
 public class ReaderConfig implements Serializable {
 
-	private CassConfig cassConfig;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6130085012694365732L;
+
+	private CassConfig cassConfig = new CassConfig();
 
 	private String keyspace;
 	

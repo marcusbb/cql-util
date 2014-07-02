@@ -6,11 +6,15 @@ import java.util.Collections;
 import java.util.regex.Pattern;
 
 import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ExecutionInfo;
 import com.datastax.driver.core.Row;
 
+import driver.em.CassConfig;
+
 import reader.CQLRowReader;
 import reader.JobBootStrap;
+import reader.MTJobBootStrap;
 import reader.PKConfig.ColumnInfo;
 import reader.ReaderConfig;
 import reader.ReaderJob;
@@ -27,7 +31,7 @@ public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 	 * 
 	 */
 	private static final long serialVersionUID = -753063495008105310L;
-	private ColumnInfo []colsToSearch;
+	private static ColumnInfo []colsToSearch;
 	private Pattern pattern = Pattern.compile("[a-b].*");
 	
 	private Collection<FormattedReport> collectedLines = Collections.synchronizedList(new ArrayList<FormattedReport>());
@@ -71,13 +75,31 @@ public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 	}
 	
 	//bootstrap
-	public static class RegExMain extends JobBootStrap {
+	//single threaded
+	public static class RegExMain extends MTJobBootStrap {
 
+		public RegExMain() {
+			super(1); 
+		}
 		public static void main(String []args) {
 			
-			int arg_len = args.length;
 			
 			//
+			RegExMain main = new RegExMain();
+			colsToSearch = new ColumnInfo[]{new ColumnInfo("value",DataType.text())};
+			//build the reader config
+			ReaderConfig config = new ReaderConfig();
+			CassConfig cassConfig = new CassConfig();
+			cassConfig.setContactHostsName(new String[]{"marcus-v4.rim.net"});
+			config.setCassConfig(cassConfig);
+			config.setTable("device_advertised_services");
+			config.setKeyspace("icrs");
+			config.setOtherCols(new String[]{"value"});
+			
+			main.bootstrap(config);
+			
+			main.runJob();
+			
 		}
 		@Override
 		public ReaderJob<?> initJob(ReaderConfig readerConfig) {
@@ -86,9 +108,10 @@ public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 		}
 		
 	}
+	
 	@Override
 	public void onReadComplete() {
-		// TODO Auto-generated method stub
+		System.out.println("My job is done");
 		
 	}
 
