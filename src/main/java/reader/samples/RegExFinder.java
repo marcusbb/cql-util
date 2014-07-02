@@ -5,6 +5,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
+import reader.CQLRowReader;
+import reader.MTJobBootStrap;
+import reader.PKConfig.ColumnInfo;
+import reader.ReaderConfig;
+import reader.ReaderJob;
+import reader.RowReaderTask;
+
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ExecutionInfo;
@@ -12,18 +19,14 @@ import com.datastax.driver.core.Row;
 
 import driver.em.CassConfig;
 
-import reader.CQLRowReader;
-import reader.JobBootStrap;
-import reader.MTJobBootStrap;
-import reader.PKConfig.ColumnInfo;
-import reader.ReaderConfig;
-import reader.ReaderJob;
-import reader.RowReaderTask;
-
 /**
  * 
  * Find via a reg expression and build a report
  *
+ * This sample builds the {@link ReaderConfig} manually.
+ * 
+ * 
+ * 
  */
 public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 
