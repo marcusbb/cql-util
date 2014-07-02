@@ -25,8 +25,6 @@ distributed fetch operation.
 Currently supported is a multi-threaded fetch, spliting the token ranges equally by the number
 of executing threads.
 
-Configuration based knowledge of table, partition column.  
-
 Why do we need to know the composite row key?  The algorithm does not assume that each
 partition row key is a primary key, as it could be parts.  And further more, we
 want to exclude rows that read again.  As the algorithm doesn't know first hand the 
@@ -56,7 +54,7 @@ Configuration is defined via xml, but can be hand stitched.
 	<startToken></startToken>
 	<!-- end of range -->
 	<endToken></endToken>
-	
+	<!-- Not recommended to manually configure, as this will be discovered -->
 	<pkConfig>
 	  	<!-- This is the partition portion of the key: one or more -->
 		<partitionKeys>
