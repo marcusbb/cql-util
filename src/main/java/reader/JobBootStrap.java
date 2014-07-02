@@ -1,5 +1,6 @@
 package reader;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 
@@ -39,16 +40,32 @@ public abstract class JobBootStrap {
 	protected final static String DEF_CONFIG = "reader-config.xml";
 	
 	/**
-	 * Bootstrap with a given inputstream
+	 * Bootstrap with a given {@link InputStream}
+	 * @param configClass - by default this is {@link ReaderConfig} class
 	 * @param stream
 	 * @throws JAXBException 
 	 * @throws ClassNotFoundException 
 	 */
 	public void bootstrap(String configClass, InputStream stream) throws ClassNotFoundException, JAXBException  {
-		JAXBContext jc = JAXBContext.newInstance(Class.forName(configClass));
+		String c = ReaderConfig.class.getName();
+		if (configClass == null)
+			c = ReaderConfig.class.getName();		
+		JAXBContext jc = JAXBContext.newInstance(Class.forName(c));
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		this.config = (ReaderConfig)unmarshaller.unmarshal(stream);
 		doBoostrap(this.config);
+	}
+	/**
+	 * Bootstrap with a provided xml string, calling 
+	 * {@link #bootstrap(String, InputStream)}
+	 * 
+	 * @param xml
+	 * @throws ClassNotFoundException
+	 * @throws JAXBException
+	 */
+	public void boostrap(String xml) throws ClassNotFoundException, JAXBException  {
+		ByteArrayInputStream bin = new ByteArrayInputStream(xml.getBytes());
+		bootstrap(ReaderConfig.class.getName(),bin);
 	}
 	/**
 	 * 

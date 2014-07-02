@@ -3,6 +3,7 @@ package reader.samples;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import reader.CQLRowReader;
 import reader.MTJobBootStrap;
@@ -109,7 +110,9 @@ public class CSVReportJob extends ReaderJob<Void> {
 				
 				File f = new File(fileName);
 				Main boot = new Main(threads,f,delimiter);
-				boot.bootstrap();
+				//provide the input stream
+				InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream("reader/samples/csv-config.xml");
+				boot.bootstrap(null,ins);
 				boot.runJob();
 			}catch (Exception e) {
 				e.printStackTrace();
