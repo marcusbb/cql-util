@@ -111,8 +111,9 @@ public class CSVReportJob extends ReaderJob<Void> {
 				File f = new File(fileName);
 				Main boot = new Main(threads,f,delimiter);
 				//provide the input stream
-				InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream("reader/samples/csv-config.xml");
-				boot.bootstrap(null,ins);
+				//InputStream ins = Thread.currentThread().getContextClassLoader().getResourceAsStream("reader/samples/csv-config.xml");
+				//boot.bootstrap(null,ins);
+				boot.bootstrap();
 				boot.runJob();
 			}catch (Exception e) {
 				e.printStackTrace();
