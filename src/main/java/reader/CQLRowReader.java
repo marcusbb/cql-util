@@ -25,7 +25,7 @@ import com.datastax.driver.core.exceptions.ReadTimeoutException;
 import driver.em.CUtils;
 import driver.em.Composite;
 
-public class CQLRowReader {
+public class CQLRowReader<V> {
 
 	protected Cluster cluster;
 	
@@ -35,46 +35,17 @@ public class CQLRowReader {
 	
 	ReaderConfig config;
 	
-	ReaderJob job;
+	ReaderJob<V> job;
 	
 	long totalReadCount = 0;
 	
-	//should remove this
-	public CQLRowReader() {
-		job = new ReaderJob<Void>() {
-			
-			@Override
-			public RowReaderTask<Void> newTask() throws Exception {
-				return new RowReaderTask<Void>() {
-
-					@Override
-					public Void process(Row row,ColumnDefinitions colDef,ExecutionInfo execInfo) {
-						logger.debug("Reading Row");
-						return null;
-					}
-				};
-			}
-
-			@Override
-			public void processResult(Void result) {
-				
-				
-			}
-
-			@Override
-			public void onReadComplete() {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		};
-	}
-	public CQLRowReader(ReaderJob job) {
+	
+	public CQLRowReader(ReaderJob<V> job) {
 		this.job = job;
 	}
 	
 	
-	public CQLRowReader(ReaderConfig config,ReaderJob job,Cluster cluster,Session session) {
+	public CQLRowReader(ReaderConfig config,ReaderJob<V> job,Cluster cluster,Session session) {
 		this.cluster = cluster;
 		this.session = session;
 		this.job = job;
@@ -110,84 +81,83 @@ public class CQLRowReader {
 		while (more) {
 			
 			String cql = generateSelectPrefix(startToken,endToken) ;
-			SimpleStatement ss = new SimpleStatement( cql  );
+			SimpleStatement ss = new SimpleStatement( cql );
 			ss.setConsistencyLevel(config.getConsistencyLevel());
 			if (routeKey != null) 
 				ss.setRoutingKey(routeKey);
 			//ss.setRoutingKey(routeKey);
 			logger.debug("Executing cql: {} , routeKey: {} " ,cql, startToken);
 			try {
-			ResultSet rs = session.execute(ss);
-			
-			Iterator<Row> iter = rs.iterator();
-			
-			//bail on empty result set
-			if (!iter.hasNext())
-				break;
-			//hold the last row id (composite key)
-			Object lastId = null;
-			
-			Row row = null;
-			int curRowCount = 0;
-			HashSet<Object> curIdSet = new HashSet<Object>(pageSize);
-			
-						
-			//THROUGH THE ROW RESULT - per start token
-			long curReadCount = 0;
-			while (iter.hasNext()) {
-				curRowCount++;
-				row = iter.next();
+				ResultSet rs = session.execute(ss);
 				
-				lastId = getRowCompositeKey(row);
-				//logger.debug("lastId {}, contained {}" + lastId , lastIdSet.contains(lastId));
+				Iterator<Row> iter = rs.iterator();
 				
-				curIdSet.add(lastId);
-				if (lastIdSet.contains(lastId)) {
-					continue;
-				}
-				//token is selected as the first column
-				startToken = row.getLong(0);
+				//bail on empty result set
+				if (!iter.hasNext())
+					break;
+				//hold the last row id (composite key)
+				Object lastId = null;
 				
-				//internal count 
-				totalReadCount++;
-				curReadCount++;
-				//set next route key
-				routeKey = getRouteKey(row);
-				try {
-					RowReaderTask<?> rr =  job.newTask();
-					Object ret = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
-					job.processResult(ret);
+				Row row = null;
+				int curRowCount = 0;
+				HashSet<Object> curIdSet = new HashSet<Object>(pageSize);
+				
+							
+				//THROUGH THE ROW RESULT - per start token
+				long curReadCount = 0;
+				while (iter.hasNext()) {
+					curRowCount++;
+					row = iter.next();
+					
+					lastId = getRowCompositeKey(row);
+					//logger.debug("lastId {}, contained {}" + lastId , lastIdSet.contains(lastId));
+					
+					curIdSet.add(lastId);
+					if (lastIdSet.contains(lastId)) {
+						continue;
+					}
+					//token is selected as the first column
+					startToken = row.getLong(0);
+					
+					//internal count 
+					totalReadCount++;
+					curReadCount++;
+					//set next route key
+					routeKey = getRouteKey(row);
+					try {
+						RowReaderTask<V> rr =  job.newTask();
+						V ret = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+						job.processResult(ret);
+					}
+					catch (Exception e) {
+						//will have been caught above
+						logger.error(e.getMessage(), e);
+						//bail out on client error
+						throw new RuntimeException( e );
+					}
 				}
-				catch (Exception e) {
-					//will have been caught above
-					logger.error(e.getMessage(), e);
-					//bail out on client error
-					throw new RuntimeException( e );
+				 
+				
+				//exhausted the rs
+				if (curRowCount < pageSize ) {
+					logger.info("page size " + pageSize+ " exceeds row count " + curRowCount);
+					//System.out.println("Count: " + count + " start: " + startId + " token: " + token);
+					startToken++;
+					//break;
+				} 
+				//CHECK THAT WE HAVE A COMPLETE OVER-LAP COMPARED TO LAST READ
+				
+				if (curReadCount == 0 && lastIdSet.containsAll(curIdSet)) {
+					logger.warn("Wide row detected: pageSize must be greater than the widest CF row for optimal reading");
+					readWide(row);
+					startToken++;
+				} else if (curReadCount == 0 ) {
+					logger.info("No rows read at token {}" , startToken);
+					startToken++;
 				}
-			}
-			 
-			
-			//exhausted the rs
-			if (curRowCount < pageSize ) {
-				logger.info("page size " + pageSize+ " exceeds row count " + curRowCount);
-				//System.out.println("Count: " + count + " start: " + startId + " token: " + token);
-				startToken++;
-				//break;
-			} 
-			//CHECK THAT WE HAVE A COMPLETE OVER-LAP COMPARED TO LAST READ
-			
-			if (curReadCount == 0 && lastIdSet.containsAll(curIdSet)) {
-				logger.warn("Wide row detected: pageSize must be greater than the widest CF row for optimal reading");
-				readWide(row);
-				startToken++;
-			} else if (curReadCount == 0 ) {
-				logger.info("No rows read at token {}" , startToken);
-				startToken++;
-			}
-			lastIdSet = curIdSet;
-			logger.debug("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
-			//Added a catch-all
-			//which will likely be caused by the session.execute above
+				lastIdSet = curIdSet;
+				logger.debug("Total: {}  Cur Count: {} , startToken: {}", totalReadCount, curReadCount,startToken);
+				
 			}catch (ReadTimeoutException e) {
 				logger.error(e.getMessage(),e);
 				startToken++;
@@ -233,8 +203,8 @@ public class CQLRowReader {
 					totalReadCount++;
 					clusterKey = get(row,config.getPkConfig().getClusterKeys()[0]);
 					try {
-						RowReaderTask rr = job.newTask();
-						Object result = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
+						RowReaderTask<V> rr = job.newTask();
+						V result = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 						job.processResult(result);
 					}catch (Exception e) {
 						logger.error("error during execution {}", cql);

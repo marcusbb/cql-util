@@ -51,7 +51,7 @@ public class ReaderTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("reader-config.xml");
-		reader = new CQLRowReader();
+		reader = new CQLRowReader(new Stubs.MyReaderJob());
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = cluster;

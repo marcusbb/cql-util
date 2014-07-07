@@ -12,6 +12,9 @@ import javax.xml.bind.Unmarshaller;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ExecutionInfo;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
@@ -28,6 +31,8 @@ public class PerformanceReaderTests {
 	static CQLRowReader reader = null;
 	static Session session = null;
 
+	
+	
 	@BeforeClass
 	public static void beforeClass() throws Exception {
 
@@ -35,7 +40,7 @@ public class PerformanceReaderTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("perf-reader-config.xml");
-		reader = new CQLRowReader();
+		reader =  new CQLRowReader(new Stubs.MyReaderJob());
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
@@ -48,7 +53,7 @@ public class PerformanceReaderTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream(xmlConfig);
-		CQLRowReader r = new CQLRowReader();
+		CQLRowReader r = new CQLRowReader(new Stubs.MyReaderJob());
 		r.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 		r.cluster = CUtils.createCluster(reader.config.getCassConfig());
 		r.session = reader.cluster.connect("icrs");
@@ -61,7 +66,7 @@ public class PerformanceReaderTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream(xmlConfig);
-		CQLRowReader r = new CQLRowReader();
+		CQLRowReader r = new CQLRowReader(new Stubs.MyReaderJob());
 		r.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		r.session = session;

@@ -48,7 +48,7 @@ public class WideRowTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("wide-config.xml");
-		reader = new CQLRowReader();
+		reader = new CQLRowReader(new Stubs.MyReaderJob());
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());

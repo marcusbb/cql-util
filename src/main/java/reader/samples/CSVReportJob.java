@@ -97,7 +97,7 @@ public class CSVReportJob extends ReaderJob<Void> {
 		public static void main(String []args) {
 			//System.setProperty("config", "perf-reader-config.xml");
 			try {
-				int threads = 1;
+				int threads = 2;
 				String fileName = "output.csv";
 				String delimiter = delim;
 				

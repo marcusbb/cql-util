@@ -49,7 +49,7 @@ public class Reader3PartKeyTests {
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("reader-config2.xml");
-		reader = new CQLRowReader();
+		reader = new CQLRowReader(new Stubs.MyReaderJob());
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
 
 		reader.cluster = cluster;
