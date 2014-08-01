@@ -1,6 +1,9 @@
-The package contained within contains basic mapping functionality for JPA type annotations
-to the java driver.
+Simple JPA + Cassandra.
+
+The package contained within contains basic mapping functionality for JPA type annotations to the java driver.
 Supported are a the @Id, @EmbeddedId and @Column annotations, in a simplistic way.
+
+No support for JOINS, or any entity to entity related mapping.
 
 Data types supported:
 - String
@@ -39,7 +42,7 @@ public class UserFile {
 		@Column(name="version")
 		public long version;
 	}
-	
+	//Currently only Map<String,String> is supported!!
 	@Column(name="properties")
 	public Map<String,String> properties;
 	

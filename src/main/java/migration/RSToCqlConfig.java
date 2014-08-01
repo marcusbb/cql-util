@@ -1,4 +1,4 @@
-package migration.poc;
+package migration;
 
 import java.util.List;
 
@@ -8,6 +8,8 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 public class RSToCqlConfig {
 
 	private String cqlTable;
+	
+	private String keyspace;
 	
 	private List<JdbcColMapping> columns;
 
@@ -58,6 +60,18 @@ public class RSToCqlConfig {
 		this.cqlTable = cqlTable;
 	}
 
-	
+	public String getKeyspace() {
+		return keyspace;
+	}
 
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
+	}
+	
+	@Override
+	public String toString() {
+		return "RSToCqlConfig [cqlTable=" + cqlTable + ", keyspace=" + keyspace
+				+ ", columns=" + columns + ", nameMapping=" + nameMapping
+				+ ", valueMapping=" + valueMapping + "]";
+	}
 }

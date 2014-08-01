@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+	<cassConfig>
+		<baseReconnectDelay>60000</baseReconnectDelay>
+		<concurrentLocal>100</concurrentLocal>
+		<concurrentRemote>100</concurrentRemote>
+		<connectionTimeoutMs>5000</connectionTimeoutMs>
+		<contactHostsName>marcus-v4.rim.net</contactHostsName>
+		
+		<coreConnectionsPerLocalHost>10</coreConnectionsPerLocalHost>
+		<coreConnectionsPerRemoteHost>10</coreConnectionsPerRemoteHost>
+		<keepAlive>true</keepAlive>
+		<localDataCenterName>datacenter1</localDataCenterName>
+		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>
+		<maxConnectionsPerRemoteHost>10</maxConnectionsPerRemoteHost>
+		<maxReconnectDelay>600000</maxReconnectDelay>
+		<nativePort>9042</nativePort>
+		<readTimeoutMs>120000</readTimeoutMs>
+		<soLinger>5000</soLinger>
+		<tcpNoDelay>false</tcpNoDelay>
+	</cassConfig>
+	<keyspace>icrs</keyspace>
+	<table>device_advertised_services</table>
+	<pageSize>1000</pageSize>
+	<startToken>9116394769373770098</startToken>
+	
+	<endToken>9116394769373770100</endToken> 
+	
+	
+	<consistencyLevel>ONE</consistencyLevel>
+	
+</config>

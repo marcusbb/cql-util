@@ -1,4 +1,4 @@
-package migration.poc;
+package migration;
 
 import static driver.em.CharConst.*;
 
@@ -15,6 +15,12 @@ public class RowToCqlMap extends RowToCql {
 	
 	public RowToCqlMap(ResultSet rs,String cqlTable,JdbcColMapping[] mapping,JdbcColMapping nameCol,JdbcColMapping valCol ) {
 		super(rs, cqlTable,mapping);
+		this.nameCol = nameCol;
+		this.valCol = valCol;
+	}
+	
+	public RowToCqlMap(ResultSet rs,String cqlTable,JdbcColMapping[] mapping,JdbcColMapping nameCol,JdbcColMapping valCol, String keyspace ) {
+		super(rs, cqlTable,mapping, keyspace);
 		this.nameCol = nameCol;
 		this.valCol = valCol;
 	}
@@ -49,5 +55,4 @@ public class RowToCqlMap extends RowToCql {
 		}
 		return values.toArray();
 	}
-	
 }

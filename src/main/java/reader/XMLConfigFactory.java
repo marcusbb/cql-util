@@ -1,4 +1,4 @@
-package migration.poc;
+package reader;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
@@ -6,8 +6,8 @@ import javax.xml.bind.annotation.XmlRegistry;
 public class XMLConfigFactory {
 
 
-	public XMLConfig createConfiguration() {
-		return new XMLConfig();
+	public ReaderConfig createConfiguration() {
+		return new ReaderConfig();
 	}
 	
 }

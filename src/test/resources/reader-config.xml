@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+	<cassConfig>
+		<baseReconnectDelay>60000</baseReconnectDelay>
+		<concurrentLocal>100</concurrentLocal>
+		<concurrentRemote>100</concurrentRemote>
+		<connectionTimeoutMs>5000</connectionTimeoutMs>
+		<contactHostsName>marcus-v4.rim.net</contactHostsName>
+		
+		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
+		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
+		<keepAlive>true</keepAlive>
+		<localDataCenterName>datacenter1</localDataCenterName>
+		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>
+		<maxConnectionsPerRemoteHost>10</maxConnectionsPerRemoteHost>
+		<maxReconnectDelay>600000</maxReconnectDelay>
+		<nativePort>9042</nativePort>
+		<readTimeoutMs>120000</readTimeoutMs>
+		<soLinger>5000</soLinger>
+		<tcpNoDelay>false</tcpNoDelay>
+	</cassConfig>
+	<keyspace>icrs</keyspace>
+	<table>DESTINATION_MESSAGE_INDEX</table>
+	<pageSize>1000</pageSize>
+	
+	
+        <pageSize>1000</pageSize>
+        <!-- Configurable start and end token -->
+        <startToken>329406144173391000</startToken>
+        <endToken>381232710856662000</endToken>
+        <!-- Consistency default is one
+        <consistencyLevel>ONE</consistencyLevel>
+         -->
+        <!-- Define the partition and cluster key: required for now, but can be discovered -->
+        <pkConfig>
+                <partitionKeys>
+                        <name>key</name>
+                        <type>ASCII</type>
+                </partitionKeys>
+                <clusterKeys>
+                        <name>column1</name>
+                        <type>INTEGER</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column2</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column3</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+                <clusterKeys>
+                        <name>column4</name>
+                        <type>ASCII</type>
+                </clusterKeys>
+        </pkConfig>
+</config>

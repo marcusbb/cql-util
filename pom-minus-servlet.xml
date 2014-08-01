@@ -11,9 +11,29 @@
 	<dependencies>
 		<dependency>
 
-		  <groupId>com.datastax.cassandra</groupId>
-		  <artifactId>cassandra-driver-core</artifactId>
-		  <version>2.0.3</version>
+			<groupId>com.datastax.cassandra</groupId>
+			<artifactId>cassandra-driver-core</artifactId>
+			<version>1.0.7</version>
+			<!-- <exclusions> <exclusion> <groupId>com.yammer.metrics</groupId> <artifactId>metrics-core</artifactId> 
+				</exclusion> </exclusions> -->
+				<exclusions>
+					<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+  					<artifactId>servlet-api</artifactId>
+					</exclusion>
+					<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+  					<artifactId>jetty-util</artifactId>
+					</exclusion>
+					<exclusion>
+					<groupId>javax.servlet</groupId>
+  					<artifactId>servlet-api</artifactId>
+					</exclusion>
+					<exclusion>
+					 <groupId>org.mortbay.jetty</groupId>
+  					<artifactId>jetty</artifactId>
+					</exclusion>
+				</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>javax.persistence</groupId>
@@ -31,7 +51,16 @@
 		    <scope>provided</scope>
 		</dependency>
 
-		
+		<dependency>
+			<groupId>com.codahale.metrics</groupId>
+			<artifactId>metrics-core</artifactId>
+			<version>3.0.0-RC1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.codahale.metrics</groupId>
+			<artifactId>metrics-ganglia</artifactId>
+			<version>3.0.0-RC1</version>
+		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -49,17 +78,6 @@
 			<version>11.2.0.3</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- Added due to removal of dependencies from the driver -->
-		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-lang3</artifactId>
-		    <version>3.3.2</version>
-		</dependency>
-		<!-- <dependency>
-		    <groupId>org.apache.cassandra</groupId>
-		    <artifactId>cassandra-all</artifactId>
-		    <version>2.0.9</version>
-		</dependency> -->
 	</dependencies>
 	
 	<build>

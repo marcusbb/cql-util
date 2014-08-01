@@ -4,8 +4,11 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import com.datastax.driver.core.BatchStatement;
+
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Cluster.Builder;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.HostDistance;
@@ -15,9 +18,13 @@ import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.LoggingRetryPolicy;
 import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+
+import driver.em.CassConfig.LoadBalancing;
 
 
 /**
@@ -107,24 +114,31 @@ public class CUtils {
         //socket options
         SocketOptions sockOpts = new SocketOptions();
         sockOpts.setTcpNoDelay(context.isTcpNoDelay());
+        //TODO: need to figure out balancing policy and retry policy from config
+        LoadBalancingPolicy lbPolicy = null;
+        if (context.loadBalancing == LoadBalancing.TOKEN_AWARE_DC_RR)
+        	lbPolicy = new TokenAwarePolicy(new DCAwareRoundRobinPolicy(context.getLocalDataCenterName()));
+        else if (context.loadBalancing == LoadBalancing.ROUND_ROBIN)
+        	lbPolicy = new RoundRobinPolicy();
+        else if (context.loadBalancing == LoadBalancing.TOKEN_AWARE_DC_RR)
+        	lbPolicy = new TokenAwarePolicy(new RoundRobinPolicy());
         
-		Cluster cluster = Cluster.builder()
+        Builder builder = Cluster.builder()
 				  .addContactPoints(context.getContactHostsName())
 				  .withPort(context.getNativePort())
-				  .withLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy(context.getLocalDataCenterName())))
-				  
+				  .withLoadBalancingPolicy(lbPolicy)
 				  .withReconnectionPolicy(new ExponentialReconnectionPolicy(context.getBaseReconnectDelay(), context.getMaxReconnectDelay()))
 				  .withPoolingOptions(pools)
 				  .withSocketOptions(sockOpts)
 				  //The default is sufficient
 				  //and can be handled on a per request basis
-				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
-				  
-				  //.withCredentials(context.getUserName(), context.getPassword())
-				  .build();
-		
-		
-		return cluster;		
+				  .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE));
+      
+        if(context.getUsername() != null){
+        	builder.withCredentials(context.getUsername(), context.getPassword());
+		}
+      
+		return builder.build();		
 	}
 	
 	public static ByteBuffer[] getBytesForRoute(Object ...objs ) {

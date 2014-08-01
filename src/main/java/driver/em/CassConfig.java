@@ -1,18 +1,30 @@
 package driver.em;
 
+import java.io.Serializable;
+import java.util.Arrays;
+
 
 /**
  * 
  * Most configuration should do with reasonable defaults OR not set at all.
- * 
+ * Rename this to DefaultCassConfig
  */
-public class CassConfig {
+public class CassConfig implements Serializable {
 
+	private static final long serialVersionUID = 4764982374610680602L;
 	
+	public enum LoadBalancing {
+		TOKEN_AWARE_DC_RR,
+		TOKEN_AWARE_RR,
+		ROUND_ROBIN;
+		
+	}
 	//Some reasonable testing defaults are supplied, tune for production
 	String [] contactHostsName = {"localhost","127.0.0.1"};
 	int nativePort = 9042;
 	String localDataCenterName = "datacenter1";
+	String username;
+	String password;
 	
 	//concurrency (per connection)
 	int concurrentLocal = 100 ,concurrentRemote = 100;
@@ -31,6 +43,8 @@ public class CassConfig {
 	boolean tcpNoDelay = false;
 	int readTimeoutMs = 120000;
     
+	LoadBalancing loadBalancing = LoadBalancing.TOKEN_AWARE_DC_RR;
+	
     public String[] getContactHostsName() {
 		return contactHostsName;
 	}
@@ -126,6 +140,52 @@ public class CassConfig {
 	}
 	public void setMaxReconnectDelay(long maxReconnectDelay) {
 		this.maxReconnectDelay = maxReconnectDelay;
+	}
+
+	@Override
+	public String toString() {
+		return "CassConfig [contactHostsName="
+				+ Arrays.toString(contactHostsName) + ", nativePort="
+				+ nativePort + ", localDataCenterName=" + localDataCenterName
+				+ ", concurrentLocal=" + concurrentLocal
+				+ ", concurrentRemote=" + concurrentRemote
+				+ ", coreConnectionsPerLocalHost="
+				+ coreConnectionsPerLocalHost + ", maxConnectionsPerLocalHost="
+				+ maxConnectionsPerLocalHost
+				+ ", coreConnectionsPerRemoteHost="
+				+ coreConnectionsPerRemoteHost
+				+ ", maxConnectionsPerRemoteHost="
+				+ maxConnectionsPerRemoteHost + ", baseReconnectDelay="
+				+ baseReconnectDelay + ", maxReconnectDelay="
+				+ maxReconnectDelay + ", connectionTimeoutMs="
+				+ connectionTimeoutMs + ", keepAlive=" + keepAlive
+				+ ", soLinger=" + soLinger + ", tcpNoDelay=" + tcpNoDelay
+				+ ", readTimeoutMs=" + readTimeoutMs + "]";
+	}
+	
+
+	public LoadBalancing getLoadBalancing() {
+		return loadBalancing;
+	}
+	public void setLoadBalancing(LoadBalancing loadBalancing) {
+		this.loadBalancing = loadBalancing;
+	}
+
+	
+	public String getUsername() {
+		return username;
+	}
+	
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	
+	public String getPassword() {
+		return password;
+	}
+	
+	public void setPassword(String password) {
+		this.password = password;
 	}
 	
 	
