@@ -159,6 +159,8 @@ public abstract class JobBootStrap {
 		
 		//Not sure the dynamic configuration works yet
 		TableMetadata tbm = cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable());
+		if (tbm == null)
+			throw new IllegalArgumentException("Readerconfig.table is not available");
 		List<ColumnMetadata> colMeta = tbm.getPartitionKey();
 		
 		List<ColumnMetadata> colClusMeta = cluster.getMetadata().getKeyspace(config.getKeyspace()).getTable(config.getTable()).getClusteringKey();
