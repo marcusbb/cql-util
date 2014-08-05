@@ -3,7 +3,9 @@
 	<cassConfig>
 		<baseReconnectDelay>60000</baseReconnectDelay>
 		<concurrentLocal>100</concurrentLocal>
-		<concurrentRemote>100</concurrentRemote>
+		<concurrentRemote>0</concurrentRemote>
+		<minConcurrentLocal>25</minConcurrentLocal>
+		<minConcurrentRemote>0</minConcurrentRemote>
 		<connectionTimeoutMs>5000</connectionTimeoutMs>
 		<contactHostsName>marcus-v4.rim.net</contactHostsName>
 		
@@ -25,33 +27,6 @@
 	
 	
         <pageSize>1000</pageSize>
-        <!-- Configurable start and end token -->
-       
-        <!-- Consistency default is one
-        <consistencyLevel>ONE</consistencyLevel>
-         -->
-        <!--  Define the partition and cluster key: required for now, but can be discovered 
-        <pkConfig>
-                <partitionKeys>
-                        <name>key</name>
-                        <type>ASCII</type>
-                </partitionKeys>
-                <clusterKeys>
-                        <name>column1</name>
-                        <type>INTEGER</type>
-                </clusterKeys>
-                <clusterKeys>
-                        <name>column2</name>
-                        <type>ASCII</type>
-                </clusterKeys>
-                <clusterKeys>
-                        <name>column3</name>
-                        <type>ASCII</type>
-                </clusterKeys>
-                <clusterKeys>
-                        <name>column4</name>
-                        <type>ASCII</type>
-                </clusterKeys>
-        </pkConfig> -->
+        
         
 </config>

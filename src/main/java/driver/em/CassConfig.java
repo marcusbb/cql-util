@@ -3,10 +3,14 @@ package driver.em;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import com.datastax.driver.core.PoolingOptions;
+
 
 /**
  * 
  * Most configuration should do with reasonable defaults OR not set at all.
+ * Many of this configuration has been copied from the {@link PoolingOptions} class
+ * 
  * Rename this to DefaultCassConfig
  */
 public class CassConfig implements Serializable {
@@ -26,9 +30,9 @@ public class CassConfig implements Serializable {
 	String username;
 	String password;
 	
-	//concurrency (per connection)
+	//max concurrency (per connection) - TODO change name to maxConcurrent
 	int concurrentLocal = 100 ,concurrentRemote = 100;
-		
+	int minConcurrentLocal = 25, minConcurrentRemote = 25;
 	//connection pooling options
 	int coreConnectionsPerLocalHost = 2, maxConnectionsPerLocalHost = 2,
 			coreConnectionsPerRemoteHost = 2, maxConnectionsPerRemoteHost = 2;
@@ -142,13 +146,18 @@ public class CassConfig implements Serializable {
 		this.maxReconnectDelay = maxReconnectDelay;
 	}
 
+		
+
 	@Override
 	public String toString() {
 		return "CassConfig [contactHostsName="
 				+ Arrays.toString(contactHostsName) + ", nativePort="
 				+ nativePort + ", localDataCenterName=" + localDataCenterName
+				+ ", username=" + username + ", password=" + password
 				+ ", concurrentLocal=" + concurrentLocal
 				+ ", concurrentRemote=" + concurrentRemote
+				+ ", minConcurrentLocal=" + minConcurrentLocal
+				+ ", minConcurrentRemote=" + minConcurrentRemote
 				+ ", coreConnectionsPerLocalHost="
 				+ coreConnectionsPerLocalHost + ", maxConnectionsPerLocalHost="
 				+ maxConnectionsPerLocalHost
@@ -160,10 +169,9 @@ public class CassConfig implements Serializable {
 				+ maxReconnectDelay + ", connectionTimeoutMs="
 				+ connectionTimeoutMs + ", keepAlive=" + keepAlive
 				+ ", soLinger=" + soLinger + ", tcpNoDelay=" + tcpNoDelay
-				+ ", readTimeoutMs=" + readTimeoutMs + "]";
+				+ ", readTimeoutMs=" + readTimeoutMs + ", loadBalancing="
+				+ loadBalancing + "]";
 	}
-	
-
 	public LoadBalancing getLoadBalancing() {
 		return loadBalancing;
 	}
@@ -186,6 +194,18 @@ public class CassConfig implements Serializable {
 	
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	public int getMinConcurrentLocal() {
+		return minConcurrentLocal;
+	}
+	public void setMinConcurrentLocal(int minConcurrentLocal) {
+		this.minConcurrentLocal = minConcurrentLocal;
+	}
+	public int getMinConcurrentRemote() {
+		return minConcurrentRemote;
+	}
+	public void setMinConcurrentRemote(int minConcurrentRemote) {
+		this.minConcurrentRemote = minConcurrentRemote;
 	}
 	
 	

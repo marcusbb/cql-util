@@ -103,13 +103,18 @@ public class CUtils {
 		
 		
         PoolingOptions pools = new PoolingOptions();
-        pools.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, context.getConcurrentLocal());
-        pools.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, context.getConcurrentRemote());
-        
         pools.setCoreConnectionsPerHost(HostDistance.LOCAL, context.getCoreConnectionsPerLocalHost());
         pools.setMaxConnectionsPerHost(HostDistance.LOCAL, context.getMaxConnectionsPerLocalHost());
         pools.setCoreConnectionsPerHost(HostDistance.REMOTE, context.getCoreConnectionsPerRemoteHost());
         pools.setMaxConnectionsPerHost(HostDistance.REMOTE, context.getMaxConnectionsPerRemoteHost());
+        
+        //TODO set the minimum so this won't cause validation failure
+        pools.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, context.getMinConcurrentLocal());
+        pools.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, context.getMinConcurrentRemote());
+        pools.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, context.getConcurrentLocal());
+        pools.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.REMOTE, context.getConcurrentRemote());
+        
+        
         
         //socket options
         SocketOptions sockOpts = new SocketOptions();
