@@ -266,6 +266,9 @@ public class CQLRowReader<V> {
 			ret = row.getUUID(info.name);
 		else if (DataType.varchar().equals(info.type))
 			ret = row.getString(info.name);
+		else if (DataType.blob().equals(info.type))
+			ret = row.getBytes(info.name);
+			
 		return ret;
 	}
 	public static Object get(Row row, ColumnDefinitions.Definition colDefinition) {
