@@ -21,6 +21,10 @@ import org.junit.Test;
 
 import reader.Device.Id;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ColumnDefinitions;
+import com.datastax.driver.core.ExecutionInfo;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
@@ -33,29 +37,63 @@ import driver.em.TestBase;
 /**
  * 
  * this needs to be run:
+ * CREATE TABLE wide_row (
+  id text,
+  name text,
+  value text,
+  PRIMARY KEY ((id), name)
+)
  * 
  * 
  */
 public class WideRowTests {
 
-	static CQLRowReader reader = null;
+	
 	static Session session = null;
-
+	static JobBootStrap boot = null;
+	
 	@BeforeClass
 	public static void beforeClass() throws Exception {
 
-		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
-		Unmarshaller unmarshaller = jc.createUnmarshaller();
-		InputStream ins = Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream("wide-config.xml");
-		reader = new CQLRowReader(new Stubs.MyReaderJob());
-		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
-
-		reader.cluster = CUtils.createCluster(reader.config.getCassConfig());
-		reader.session = reader.cluster.connect("icrs");
-		session = reader.session;
+		boot = new JobBootStrap() {
+			
+			@Override
+			public ReaderJob<?> initJob(ReaderConfig readerConfig) {
+				return new WideRowJob();
+			}
+		};
+		boot.bootstrap(ReaderConfig.class.getName(), Thread.currentThread().getContextClassLoader().getResourceAsStream("wide-config.xml"));
+		
 	}
+	
+	static class WideRowJob extends ReaderJob<Void> {
 
+		@Override
+		public RowReaderTask<Void> newTask() throws Exception {
+			return new RowReaderTask<Void>() {
+				
+				@Override
+				public Void process(Row row, ColumnDefinitions colDef,
+						ExecutionInfo execInfo) {
+					// TODO Auto-generated method stub
+					return null;
+				}
+			};
+		}
+
+		@Override
+		public void processResult(Void result) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onReadComplete() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
 	@Entity
 	@Table(name="wide_row")
 	public static class WideRow {
@@ -89,7 +127,7 @@ public class WideRowTests {
 	}
 	@Test
 	public void read() {
-		reader.read();
+		boot.runJob();
 		
 	}
 	public void insertSeqDev2(int rowNum,int colCount) {

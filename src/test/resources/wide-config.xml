@@ -24,16 +24,6 @@
 	<table>wide_row</table>
 	<pageSize>1000</pageSize>
 	
-	<pkConfig>
-		<tokenPart>
-			<name>id</name>
-			<type>ASCII</type>
-		</tokenPart>
-		<nonTokenPart>
-			<name>name</name>
-			<type>ASCII</type>
-		</nonTokenPart>
-		
-	</pkConfig>
+	
 	<otherCols>value</otherCols>
 </config>

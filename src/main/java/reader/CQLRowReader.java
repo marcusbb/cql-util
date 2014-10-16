@@ -10,14 +10,14 @@ import org.slf4j.Logger;
 
 import reader.PKConfig.ColumnInfo;
 
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.ExecutionInfo;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.QueryTimeoutException;
 import com.datastax.driver.core.exceptions.ReadTimeoutException;
@@ -25,6 +25,12 @@ import com.datastax.driver.core.exceptions.ReadTimeoutException;
 import driver.em.CUtils;
 import driver.em.Composite;
 
+/**
+ * 
+ * Not thread safe reader. Each reader must have it's own thread.
+ *
+ * @param <V>
+ */
 public class CQLRowReader<V> {
 
 	protected Cluster cluster;
@@ -39,7 +45,9 @@ public class CQLRowReader<V> {
 	
 	long totalReadCount = 0;
 	
-	
+	//used if there is a wide row to be read
+	private PreparedStatement widePs;
+		
 	public CQLRowReader(ReaderJob<V> job) {
 		this.job = job;
 	}
@@ -77,18 +85,19 @@ public class CQLRowReader<V> {
 		//query
 		HashSet<Object> lastIdSet = new HashSet<Object>(pageSize);
 		ByteBuffer[] routeKey = null;
+		String tokenCql = generateSelectPrefix();
+		PreparedStatement ps = session.prepare(tokenCql);
 		
 		while (more) {
-			
-			String cql = generateSelectPrefix(startToken,endToken) ;
-			SimpleStatement ss = new SimpleStatement( cql );
-			ss.setConsistencyLevel(config.getConsistencyLevel());
+			BoundStatement bs = ps.bind(startToken,endToken);
+						
+			ps.setConsistencyLevel(config.getConsistencyLevel());
 			if (routeKey != null) 
-				ss.setRoutingKey(routeKey);
+				ps.setRoutingKey(routeKey);
 			//ss.setRoutingKey(routeKey);
-			logger.debug("Executing cql: {} , routeKey: {} " ,cql, startToken);
+			logger.debug("Executing cql: {} , startToken: {} " ,ps.getQueryString(), startToken);
 			try {
-				ResultSet rs = session.execute(ss);
+				ResultSet rs = session.execute(bs);
 				
 				Iterator<Row> iter = rs.iterator();
 				
@@ -169,7 +178,7 @@ public class CQLRowReader<V> {
 				//not much I can do with this
 				throw e;
 			}catch (Exception e) {
-				logger.error("error during execution {}", cql);
+				logger.error("error during execution {}", ps.getQueryString());
 				logger.error(e.getMessage(),e);
 				throw e;
 			}
@@ -179,41 +188,56 @@ public class CQLRowReader<V> {
 		//job.onReadComplete();
 		
 	}
+	
+	private Object[] bindValues(Row row) {
+		ArrayList<Object> list = new ArrayList<>();
+		
+		for (ColumnInfo colinfo:config.getPkConfig().getPartitionKeys()) {
+			list.add(get(row,colinfo));
+		}
+		for (ColumnInfo colinfo:config.getPkConfig().getClusterKeys()) {
+			list.add(get(row,colinfo));
+		}
+		
+		return list.toArray();
+	}
 	//The pageSize is less than the size of the row, so we must 
 	//resort to using paging via the cluster key
 	//via assumes that the cluster key is ASC otherwise this logic may not work
 	@SuppressWarnings("unchecked")
 	protected void readWide(Row startRow) {
 		
-		Object partKey = get(startRow,config.getPkConfig().getPartitionKeys()[0]);
-		//this will be modified as we iterate through the wide row
-		Object clusterKey = get(startRow,config.getPkConfig().getClusterKeys()[0]);
+		
 		
 		boolean more =true;
-		//increment
+		if (widePs == null)
+			widePs = session.prepare(prepareWide(false, config.getPageSize()));
+		Row curRow = startRow;
 		while (more) {
-			String cql = generateWide(partKey, clusterKey, false,config.getPageSize());
-			logger.debug("Excuting cql: {}", cql);
-			ResultSet rs = session.execute(cql);
+			
+			logger.debug("Excuting cql: {}", widePs.getQueryString());
+			Object [] bindValues = bindValues(curRow);
+			ResultSet rs = session.execute(widePs.bind(bindValues));
 			List<Row> allRows = rs.all();
 			if (allRows.size() == 0)
 				more =false;
 			else {
 				for (Row row:allRows) {
 					totalReadCount++;
-					clusterKey = get(row,config.getPkConfig().getClusterKeys()[0]);
+					//Object clusterKey = get(row,config.getPkConfig().getClusterKeys()[0]);
 					try {
+						curRow = row;
 						RowReaderTask<V> rr = job.newTask();
 						V result = rr.process(row,rs.getColumnDefinitions(),rs.getExecutionInfo());
 						job.processResult(result);
 					}catch (Exception e) {
-						logger.error("error during execution {}", cql);
+						logger.error("error during execution {}", widePs.getQueryString());
 						//we will be changing how tasks are instantiated
 						logger.error(e.getMessage(), e);
 					}
 					
 				}
-				logger.info("Total: {}, partKey: Cur ClusterKey: {} ", totalReadCount,partKey, clusterKey);
+				logger.info("CQL: {},  BindValues: {} ", widePs.getQueryString(),bindValues);
 				
 			}
 			
@@ -314,12 +338,7 @@ public class CQLRowReader<V> {
 	}
 	//partition key ids - support only one for now
 	
-	private String generateWide(Object ids,Object nextClusterKey,boolean inclusiveGT,int limit) {
-		
-		SimpleStatement ss = new SimpleStatement(prepareWide(inclusiveGT,limit), ids,nextClusterKey);
-		
-		return ss.getQueryString();
-	}
+	
 	private String prepareWide(boolean inclusiveGT,int limit) {
 		StringBuilder builder = new StringBuilder("SELECT  " );
 		builder.append(getTokenStr()).append(",");
@@ -349,7 +368,7 @@ public class CQLRowReader<V> {
 		return builder.toString();
 	}
 	
-	private String generateSelectPrefix(long startToken, long endToken) {
+	private String generateSelectPrefix() {
 		StringBuilder builder = new StringBuilder("SELECT ");
 		StringBuilder tokenPart = getTokenStr();
 		builder.append(tokenPart).append(", ");
@@ -370,7 +389,7 @@ public class CQLRowReader<V> {
 		builder.append(" FROM " + config.getTable()+ " ");
 		
 		//where
-		builder.append(" WHERE " ).append(tokenPart).append(" >= " + startToken + " and " + tokenPart + " < " +endToken)
+		builder.append(" WHERE " ).append(tokenPart).append(" >= ? and " + tokenPart + " < ?")
 			.append(" limit " + config.getPageSize() );
 		return builder.toString();
 		
