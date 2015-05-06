@@ -309,7 +309,9 @@ public class EntityConfig<T> {
 				}
 				
 				//else: need to find it, possible point of refactor
-				ColumnMapping nembed = embedded.get(def.getName());
+				ColumnMapping nembed = null;
+				if (embedded != null)
+					nembed = embedded.get(def.getName());
 				if (nembed != null)
 					nembed.set(idObj, getValue(row, nembed, def));
 				
