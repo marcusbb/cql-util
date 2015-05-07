@@ -96,7 +96,7 @@ public class EntityConfig<T> {
 				
 				ArrayList<ColumnMapping> emList = new ArrayList<>();
 				
-				for (Field inF:f.getType().getFields()) {
+				for (Field inF:f.getType().getDeclaredFields()) {
 					if (inF.getAnnotation(Column.class) != null) {
 						Column innerId = (Column)inF.getAnnotation(Column.class);
 						//put column name in lower case as driver does
