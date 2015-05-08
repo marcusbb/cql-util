@@ -73,12 +73,13 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		if (!initialized)
 			throw new IllegalArgumentException("Uninitialized bootstrap");
 		splitRanges();
+		
 		for (int i=0;i<nThreads;i++) {
 			
 			final ReaderConfig.TokenRange[] tokenRanges = config.getTokenRanges();
 			final Integer index = i;
 			executor.submit(new Runnable() {
-				CQLRowReader reader = new CQLRowReader(config,job,cluster,cluster.connect(config.getKeyspace()));
+				CQLRowReader reader = new CQLRowReader(config,job,cluster,getSession());
 				@Override
 				public void run() {
 					reader.read(tokenRanges[index].getStartToken(),tokenRanges[index].getEndToken());

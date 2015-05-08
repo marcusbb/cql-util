@@ -36,6 +36,7 @@ public abstract class JobBootStrap {
 	protected ReaderConfig config;
 	protected ReaderJob<?> job;
 	protected Cluster cluster;
+	protected Session session;
 	protected volatile boolean initialized = false;
 	protected final static String DEF_CONFIG = "reader-config.xml";
 	
@@ -131,6 +132,7 @@ public abstract class JobBootStrap {
 	 */
 	private void doBoostrap(ReaderConfig config) {
 		this.cluster = CUtils.createCluster(config.getCassConfig());
+		this.session = cluster.connect(config.getKeyspace());
 		this.job = initJob(config);
 		validate(config);
 		discover(config);
@@ -204,5 +206,18 @@ public abstract class JobBootStrap {
 	 * @return
 	 */
 	public abstract ReaderJob<?> initJob(final ReaderConfig readerConfig);
+	
+	
+	public ReaderConfig getConfig() {
+		return config;
+	}
+	public Cluster getCluster() {
+		return cluster;
+	}
+	public Session getSession() {
+		return session;
+	}
+	
+	
 
 }
