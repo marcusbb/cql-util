@@ -173,7 +173,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		Iterator<Row> resultIter = result.iterator();
 		
 		if (!resultIter.hasNext())
-			return null;
+			return list;
 		
 		E entity = entityConfig.get(resultIter.next() );
 		
