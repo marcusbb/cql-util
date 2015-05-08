@@ -292,7 +292,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			if (!mapping.isMap) {
 				builder.append(ec.getColUpdate(col) );
 				valueList.add(valueObj);
-				
+				builder.append(comma).append(space);
 			} else {
 				//this is a fairly large gap in functionality
 				//as we only support <String,String> maps
@@ -307,14 +307,16 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 						valueList.add(map.get(key));
 						
 					}
+					builder.append(comma).append(space);
 				}
 				
 			}
-			if (i++ < (ec.colsToFields.size() -1)) 
-				builder.append(comma).append(space);
+							
 			
 			
 		}
+		//remove trailing comma
+		builder.delete(builder.length()-3, builder.length()-1);
 	
 		builder.append(ec.getIdPredicate());
 		if (ec.embedded != null) {
