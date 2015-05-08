@@ -380,4 +380,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	public Session getSession() {
 		return session;
 	}
+	public EntityConfig<E> getEntityConfig() {
+		return this.entityConfig;
+	}
 }
