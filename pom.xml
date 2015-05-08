@@ -13,7 +13,7 @@
 
 		  <groupId>com.datastax.cassandra</groupId>
 		  <artifactId>cassandra-driver-core</artifactId>
-		  <version>2.0.3</version>
+		  <version>2.0.9.2</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.persistence</groupId>
