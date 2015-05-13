@@ -49,7 +49,9 @@ public class ReaderConfig implements Serializable {
 	private ConsistencyLevel consistencyLevel = ConsistencyLevel.ONE;
 	
 	public static class TokenRange {
-		
+		public TokenRange() {
+			
+		}
 		public TokenRange(Long start,Long end) {
 			this.startToken = start;
 			this.endToken = end;
