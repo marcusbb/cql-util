@@ -78,7 +78,7 @@ public abstract class JobBootStrap {
 		this.config = config;
 	}
 	/**
-	 * bootstrap this job with a 
+	 * bootstrap this job with a given cluster and session (managed elsewhere)
 	 * {@link CassConfig} from {@link ReaderConfig} is ignored
 	 * in this bootstrap mechanism.
 	 *  
