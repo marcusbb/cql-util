@@ -32,7 +32,11 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		
 	}
 	
+	public MTJobBootStrap() {}
 	
+	public MTJobBootStrap(ExecutorService execService) {
+		this.executor = execService;
+	}
 	private void splitRanges() {
 
 		if (config == null)
@@ -70,7 +74,10 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		if (config == null)
 			throw new IllegalArgumentException("config hasn't been set, bootstrap hasn't been called");
 		int nThreads = config.getNumThreads();
-		
+		if (executor == null) {
+			logger.info("Using internal thread pool with threads {}", nThreads);
+			executor = Executors.newFixedThreadPool(nThreads);
+		}
 		splitRanges();
 		
 		for (int i=0;i<nThreads;i++) {
