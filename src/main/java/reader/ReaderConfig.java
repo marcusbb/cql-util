@@ -42,7 +42,7 @@ public class ReaderConfig implements Serializable {
 	private Long endToken = Long.MAX_VALUE;
 	
 	//this is for multi-threaded read
-	private int numThreads = -1;
+	private int numThreads = 1;
 	
 	private TokenRange []tokenRanges;
 	

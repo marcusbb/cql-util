@@ -22,6 +22,7 @@
 	<keyspace>icrs</keyspace>
 	<table>devices</table>
 	<pageSize>1000</pageSize>
+	<numThreads>10</numThreads>
 	<pkConfig>
 		<partitionKeys>
 			<name>id</name>

@@ -87,7 +87,7 @@ public class CSVReportJob extends ReaderJob<Void> {
 		String delimiter = null;
 		
 		public Main(int nThreads,File dest,String delim) {
-			super(nThreads);
+			
 			this.dest = dest;
 			this.delimiter = delim;
 			

@@ -31,18 +31,13 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 		}
 		
 	}
-	int nThreads = -1;
 	
-	public MTJobBootStrap(int nThreads) {
-		this.nThreads = nThreads;
-		
-		executor = Executors.newFixedThreadPool(nThreads,new TPFactory());
-		
-	}
-
 	
 	private void splitRanges() {
 
+		if (config == null)
+			throw new IllegalArgumentException("config hasn't been set, bootstrap hasn't been called");
+		int nThreads = config.getNumThreads();
 		
 		long delta = (config.getEndToken()/2 - config.getStartToken()/2)/nThreads *2;
 		long next = config.getStartToken();
@@ -72,6 +67,10 @@ public abstract class MTJobBootStrap extends JobBootStrap {
 	public void runJob() {
 		if (!initialized)
 			throw new IllegalArgumentException("Uninitialized bootstrap");
+		if (config == null)
+			throw new IllegalArgumentException("config hasn't been set, bootstrap hasn't been called");
+		int nThreads = config.getNumThreads();
+		
 		splitRanges();
 		
 		for (int i=0;i<nThreads;i++) {

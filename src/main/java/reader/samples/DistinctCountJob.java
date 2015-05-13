@@ -78,7 +78,7 @@ public class DistinctCountJob extends ReaderJob<Object> {
 		final Integer threshold;
 		DistinctCountJob job = null;
 		public DistinctCountBatchJob(Integer threshold,int numThreads) {
-			super(numThreads);
+			
 			//this.colName = colName;
 			this.threshold = threshold;
 		}

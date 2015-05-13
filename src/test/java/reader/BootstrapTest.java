@@ -37,7 +37,9 @@ public class BootstrapTest {
 		final RowCountJob  rowCountJob = new RowCountJob();
 		int nThreads = 10;
 		
-		MTJobBootStrap bootstrap = new MTJobBootStrap(nThreads) {
+		MTJobBootStrap bootstrap = new MTJobBootStrap() {
+
+			
 
 			@Override
 			public ReaderJob<?> initJob(ReaderConfig readerConfig) {

@@ -82,7 +82,7 @@ public class RegExFinder extends ReaderJob<RegExFinder.FormattedReport> {
 	public static class RegExMain extends MTJobBootStrap {
 
 		public RegExMain() {
-			super(1); 
+			 
 		}
 		public static void main(String []args) {
 			
