@@ -19,6 +19,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TableMetadata;
 
 import driver.em.CUtils;
+import driver.em.CassConfig;
 
 
 /**
@@ -75,6 +76,25 @@ public abstract class JobBootStrap {
 	public void bootstrap(ReaderConfig config) {
 		doBoostrap(config);
 		this.config = config;
+	}
+	/**
+	 * bootstrap this job with a 
+	 * {@link CassConfig} from {@link ReaderConfig} is ignored
+	 * in this bootstrap mechanism.
+	 *  
+	 * @param cluster
+	 * @param session
+	 * @param config
+	 */
+	public void bootstrap(Cluster cluster,Session session, ReaderConfig config) {
+		this.job = initJob(config);
+		this.config = config;
+		this.cluster = cluster;
+		if (session == null)
+			this.session = cluster.connect(config.getKeyspace());
+		validate(config,true); 
+		discover(config);
+		initialized = true;
 	}
 	
 	/**
@@ -134,7 +154,7 @@ public abstract class JobBootStrap {
 		this.cluster = CUtils.createCluster(config.getCassConfig());
 		this.session = cluster.connect(config.getKeyspace());
 		this.job = initJob(config);
-		validate(config);
+		validate(config,false);
 		discover(config);
 		initialized = true;
 		
@@ -142,14 +162,15 @@ public abstract class JobBootStrap {
 	/**
 	 * Much of the validation can be caught in an xslt if one is to be provided
 	 */
-	private void validate(ReaderConfig config) {
+	private void validate(ReaderConfig config,boolean allowNullCassConfig) {
 		if (config == null)
 			throw new IllegalArgumentException("ReaderConfig must not be null");
-		if (config.getCassConfig() == null)
+		if (!allowNullCassConfig && config.getCassConfig() == null)
 			throw new IllegalArgumentException("ReaderConfig.cassconfig cannot be null ");
 		if (config.getKeyspace() == null)
 			throw new IllegalArgumentException("ReaderConfig.keyspace cannot be null ");
-		
+		if (config.getEndToken() < config.getStartToken())
+			throw new IllegalArgumentException("End Token must be larger than start token");
 		if (config.getTable() == null)
 			throw new IllegalArgumentException("ReaderConfig.table cannot be null");
 			
