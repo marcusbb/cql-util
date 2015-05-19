@@ -46,7 +46,7 @@ public class ReaderConfig implements Serializable {
 	
 	private TokenRange []tokenRanges;
 	
-	private ConsistencyLevel consistencyLevel = ConsistencyLevel.ONE;
+	private ConsistencyLevel consistencyLevel = ConsistencyLevel.LOCAL_ONE;
 	
 	public static class TokenRange {
 		public TokenRange() {
