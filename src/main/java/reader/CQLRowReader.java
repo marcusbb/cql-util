@@ -41,19 +41,19 @@ public class CQLRowReader<V> {
 	
 	ReaderConfig config;
 	
-	ReaderJob<V> job;
+	IReaderJob<V> job;
 	
 	long totalReadCount = 0;
 	
 	//used if there is a wide row to be read
 	private PreparedStatement widePs;
 		
-	public CQLRowReader(ReaderJob<V> job) {
+	public CQLRowReader(IReaderJob<V> job) {
 		this.job = job;
 	}
 	
 	
-	public CQLRowReader(ReaderConfig config,ReaderJob<V> job,Cluster cluster,Session session) {
+	public CQLRowReader(ReaderConfig config,IReaderJob<V> job,Cluster cluster,Session session) {
 		this.cluster = cluster;
 		this.session = session;
 		this.job = job;

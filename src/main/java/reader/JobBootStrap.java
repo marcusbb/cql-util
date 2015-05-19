@@ -35,7 +35,7 @@ public abstract class JobBootStrap {
 	
 	//protected CQLRowReader reader = null;
 	protected ReaderConfig config;
-	protected ReaderJob<?> job;
+	protected IReaderJob<?> job;
 	protected Cluster cluster;
 	protected Session session;
 	protected volatile boolean initialized = false;
@@ -226,7 +226,7 @@ public abstract class JobBootStrap {
 	 * Give me your job
 	 * @return
 	 */
-	public abstract ReaderJob<?> initJob(final ReaderConfig readerConfig);
+	public abstract IReaderJob<?> initJob(final ReaderConfig readerConfig);
 	
 	
 	public ReaderConfig getConfig() {
