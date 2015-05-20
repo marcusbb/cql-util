@@ -1,13 +1,19 @@
 package driver.em;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
+
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 
 /**
  * 
@@ -57,6 +63,50 @@ public class SampleEntityTests extends TestBase {
 		
 		
 		//em.remove("someid", CUtils.getDefaultParams());
+		
+		
+	}
+	
+	@Test
+	public void testByteField() throws Exception {
+		DefaultEntityManager<String, SampleEntity> em = new DefaultEntityManager<>(session, SampleEntity.class);
+		
+		ByteBuffer bb = ByteBuffer.wrap(serialize("new") );
+		
+		em.session.execute("update sample SET b_info = ? where key = ?", bb,"blob_id");
+		
+		ResultSet rs = em.session.execute("select b_info from sample where key = ?", "blob_id");
+		List<Row> rows = rs.all();
+		for (Row row:rows) {
+			ByteBuffer bb2 = row.getBytes("b_info");
+			byte []b = new byte[bb2.remaining()];
+			int i=0;
+			while (bb2.remaining() >0)
+				b[i++] = bb2.get();
+				
+			//
+			
+			String compare = (String)deserialize(b);
+			org.junit.Assert.assertEquals("new", compare);
+			
+			
+		}
+	}
+	
+	@Test
+	public void testBlobOnly() throws IOException,ClassNotFoundException {
+		DefaultEntityManager<String, SampleEntity> em = new DefaultEntityManager<>(session, SampleEntity.class);
+		
+		SampleEntity entity = new SampleEntity();
+		entity.id = "someid2";
+		
+		entity.blob = ByteBuffer.wrap(serialize(new String("new")) );
+		
+		em.persist(entity, CUtils.getDefaultParams());
+		
+		SampleEntity found = em.find("someid2", CUtils.getDefaultParams());
+		
+		deserialize(found.blob);
 		
 		
 	}
