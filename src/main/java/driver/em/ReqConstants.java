@@ -21,5 +21,8 @@ public enum ReqConstants {
 	 */
 	RETRY_POLICY,
 	
-	
+	/**
+	 * Use prepared statement cache
+	 */
+	PREPARED_CACHE;
 }

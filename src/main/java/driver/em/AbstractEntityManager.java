@@ -13,7 +13,9 @@ import javax.persistence.Id;
 import javax.persistence.PersistenceException;
 
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -54,6 +56,8 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	
 	private EntityConfig<E> entityConfig;
 	
+	private static ThreadLocal<Map<String,PreparedStatement>> cachedStatements = new ThreadLocal<>();
+	
 	public AbstractEntityManager(Session session) {
 		this.session = session;
 	}
@@ -69,43 +73,58 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	
 	
 	
-	
-	
-	@Override
-	public void persist(E entity, Map<String, Object> requestParameters) {
-		
+	private ResultSet execute(SimpleStatement ss, K routeKey, Map<String, Object> requestParameters) {
+		ResultSet rs = null;
 		if (entityConfig != null) {
 			
 			//build and execute the statement
-			SimpleStatement ss = getUpdateStatement(entity);
-			defineParams(ss, requestParameters);
-			setRouting(ss, getIdValue(entity));
-			getSession().execute( ss );
+			Statement statement = null;
+			if (ss instanceof SimpleStatementUnConverted) {
+				PreparedStatement ps = cachedStatements.get().get(ss.getQueryString());
+				if (ps == null) {
+					ps = session.prepare(ss.getQueryString());
+					cachedStatements.get().put(ss.getQueryString(), ps );
+				}
+				setRouting(ps, routeKey);
+				BoundStatement bound = ps.bind(((SimpleStatementUnConverted)ss).getUnconvertedValues());
+				statement = bound;				
+				
+			}else {
+				setRouting(ss, routeKey);
+				statement = ss;
+				
+			}
+			
+			defineParams(statement, requestParameters);
+			rs = getSession().execute( ss );
 			
 		}
 		else {
 			//throw exception
 			throw new IllegalArgumentException("Entity Configuration is not set");
 		}
+		return rs;
+	}
+	
+	@Override
+	public void persist(E entity, Map<String, Object> requestParameters) {
+			
+			
+		//build and execute the statement
+		SimpleStatement ss = getUpdateStatement(entity,requestParameters.containsKey(ReqConstants.PREPARED_CACHE.toString()));
+		execute(ss, getIdValue(entity), requestParameters);
 		
 	}
 
 
 	@Override
 	public void remove(K key, Map<String, Object> requestParameters) {
-		if (entityConfig != null) {
+		
 			
-			//build and execute the statement
-			SimpleStatement ss = entityConfig.getDelStatement(key);
-			defineParams(ss, requestParameters);
-			setRouting(ss, key);
-			getSession().execute( ss );
-			
-		}
-		else {
-			//throw exception
-			throw new UnsupportedOperationException("Entity Configuration is not set");
-		}
+		// build and execute the statement
+		SimpleStatement ss = entityConfig.getDelStatement(key);
+		execute(ss, key, requestParameters);
+		
 		
 	}
 
@@ -117,11 +136,8 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			
 			//build and execute the statement
 			SimpleStatement ss = entityConfig.getAllQuery(key);
-			defineParams(ss, requestParameters);
-			setRouting(ss, key);
-			ResultSet result = getSession().execute(
-				ss
-			);
+			ResultSet result = execute(ss, key, requestParameters);
+			
 			Iterator<Row> resultIter = result.iterator();
 			
 			if (!resultIter.hasNext())
@@ -270,6 +286,24 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		}
 		
 	}
+	public void setRouting(PreparedStatement statement,K idObj) {
+		
+		if (entityConfig.embedded == null) {
+			
+			statement.setRoutingKey(entityConfig.idMapping.getBuffer(idObj));
+		}
+		//else a embedded key
+		else {
+			
+			ByteBuffer []bb = new ByteBuffer[entityConfig.embedded.columns.length];
+			int i = 0 ;
+			for (ColumnMapping mapping:entityConfig.embedded.columns) {
+				bb[i++] = mapping.getBuffer(mapping.get(idObj));
+			}
+			statement.setRoutingKey(bb);
+		}
+		
+	}
 	
 	/**
 	 * This was moved from EntityConfig 
@@ -278,12 +312,12 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	 * @param obj
 	 * @return
 	 */
-	protected SimpleStatement getUpdateStatement(E obj )  {
+	protected SimpleStatement getUpdateStatement(E obj,boolean prepared )  {
 		
 		EntityConfig<E> ec = this.entityConfig;
 		//Update is not supported in a value-less table, only insert is
 		if (ec.colsToFields.isEmpty())
-			return getInsertStatement(obj);
+			return getInsertStatement(obj,prepared);
 		
 		StringBuilder builder = new StringBuilder("UPDATE ").append(ec.tableName).append(" SET ");
 		ArrayList<Object> valueList = new ArrayList<>();
@@ -342,8 +376,11 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			Object idObj = ec.idMapping.get(obj);
 			valueList.add(idObj);
 		}
-		
-		SimpleStatement ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		SimpleStatement ss = null;
+		if (!prepared)
+			ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		else
+			ss = new SimpleStatementUnConverted(builder.toString(),valueList.toArray());
 		//System.out.println("update ss : " + ss.getQueryString());
 		return ss;
 	}
@@ -352,7 +389,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	 * @param obj
 	 * @return
 	 */
-	protected SimpleStatement getInsertStatement(E obj)  {
+	protected SimpleStatement getInsertStatement(E obj,boolean prepared)  {
 		EntityConfig<E> ec = this.entityConfig;
 		
 		ArrayList<Object> valueList = new ArrayList<>();
@@ -380,7 +417,11 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 				builder.append(", ");
 		}
 		builder.append(" ) ");
-		SimpleStatement ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		SimpleStatement ss = null;
+		if (!prepared)
+			ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		else
+			ss = new SimpleStatementUnConverted(builder.toString(),valueList.toArray());
 		
 		return ss;
 	}
@@ -388,7 +429,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	
 	@Override
 	public Statement persistStatement(E entity,Map<String,Object> params) {
-		Statement s = getUpdateStatement(entity);
+		Statement s = getUpdateStatement(entity,false);
 		defineParams(s, params);
 		return s;
 		
@@ -399,5 +440,22 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	}
 	public EntityConfig<E> getEntityConfig() {
 		return this.entityConfig;
+	}
+	
+	public static Map<String,PreparedStatement> getCachedStatements() {
+		return cachedStatements.get();
+	}
+	
+	public static class SimpleStatementUnConverted extends SimpleStatement {
+		private Object []unconverted = null;
+		
+		public SimpleStatementUnConverted(String query,final Object...values) {
+			super(query);
+			this.unconverted = values;
+		}
+		public Object[] getUnconvertedValues() {
+			return unconverted;
+		}
+		
 	}
 }
