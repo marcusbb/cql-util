@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 
 /**
  * 
@@ -46,5 +47,8 @@ public class DefaultEntityManager<K,E> extends AbstractEntityManager<K, E> {
 		return super.findBy(query, values, defaultRequestParameters);
 	}
 
+	public Statement persistStatement(E entity) {
+		return super.persistStatement(entity, defaultRequestParameters);
+	}
 	
 }

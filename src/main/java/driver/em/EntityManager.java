@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.Statement;
 
 
 
@@ -66,6 +67,14 @@ public interface EntityManager<K, E>{
 	
 	void executeBatch(BatchStatement bs);
 	
+	/**
+	 * Builds an UPDATE or INSERT statement that can be used
+	 * by {@link #executeBatch(BatchStatement)}, or other context
+	 * 
+	 * @param entity
+	 * @return
+	 */
+	Statement persistStatement(E entity,Map<String, Object> requestParameters);
 	
 }
 

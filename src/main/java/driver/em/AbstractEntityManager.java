@@ -148,7 +148,9 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 
 	@Override
 	public void executeBatch(BatchStatement bs) {
-		// TODO Auto-generated method stub
+		//no determination of routing key - as it's assumed muliple 
+		//
+		session.execute(bs);
 		
 	}
 	
@@ -191,6 +193,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			statement.setConsistencyLevel((ConsistencyLevel) params.get(ReqConstants.CONSISTENCY.toString()));
 		if (params.containsKey(ReqConstants.RETRY_POLICY.toString()))
 			statement.setRetryPolicy((RetryPolicy) params.get(ReqConstants.RETRY_POLICY.toString()));
+		
 		
 	}
 	/**
@@ -381,6 +384,16 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		
 		return ss;
 	}
+	
+	
+	@Override
+	public Statement persistStatement(E entity,Map<String,Object> params) {
+		Statement s = getUpdateStatement(entity);
+		defineParams(s, params);
+		return s;
+		
+	}
+
 	public Session getSession() {
 		return session;
 	}
