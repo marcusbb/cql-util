@@ -17,7 +17,6 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-
 import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.RetryPolicy;
@@ -79,13 +78,14 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			
 			//build and execute the statement
 			SimpleStatement ss = getUpdateStatement(entity);
+			defineParams(ss, requestParameters);
 			setRouting(ss, getIdValue(entity));
 			getSession().execute( ss );
 			
 		}
 		else {
 			//throw exception
-			throw new UnsupportedOperationException("The operation must be overridden");
+			throw new IllegalArgumentException("Entity Configuration is not set");
 		}
 		
 	}
@@ -97,13 +97,14 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			
 			//build and execute the statement
 			SimpleStatement ss = entityConfig.getDelStatement(key);
+			defineParams(ss, requestParameters);
 			setRouting(ss, key);
 			getSession().execute( ss );
 			
 		}
 		else {
 			//throw exception
-			throw new UnsupportedOperationException("The operation must be overridden");
+			throw new UnsupportedOperationException("Entity Configuration is not set");
 		}
 		
 	}
@@ -116,6 +117,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			
 			//build and execute the statement
 			SimpleStatement ss = entityConfig.getAllQuery(key);
+			defineParams(ss, requestParameters);
 			setRouting(ss, key);
 			ResultSet result = getSession().execute(
 				ss
@@ -138,7 +140,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		}
 		else {
 			//throw exception
-			throw new UnsupportedOperationException("The operation must be overridden");
+			throw new UnsupportedOperationException("Entity Configuration is not set");
 		}
 		
 	}
@@ -167,7 +169,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	public Collection<E> findBy(String query, Object[] values,Map<String, Object> requestParameters) {
 		ArrayList<E> list = new ArrayList<>();
 		SimpleStatement ss = new SimpleStatement(query,values);
-		
+		defineParams(ss, requestParameters);
 		ResultSet result = session.execute(ss);
 		
 		Iterator<Row> resultIter = result.iterator();
@@ -183,10 +185,12 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	}
 	
 	protected void defineParams(Statement statement, Map<String, Object> params) {
-		//there are a couple of other policies to set 
-		//but consistency is likely the only one required.
-		statement.setConsistencyLevel((ConsistencyLevel) params.get(ReqConstants.CONSISTENCY));
-		statement.setRetryPolicy((RetryPolicy) params.get(ReqConstants.RETRY_POLICY));
+		if (params == null)
+			return;
+		if (params.containsKey(ReqConstants.CONSISTENCY.toString()))
+			statement.setConsistencyLevel((ConsistencyLevel) params.get(ReqConstants.CONSISTENCY.toString()));
+		if (params.containsKey(ReqConstants.RETRY_POLICY.toString()))
+			statement.setRetryPolicy((RetryPolicy) params.get(ReqConstants.RETRY_POLICY.toString()));
 		
 	}
 	/**

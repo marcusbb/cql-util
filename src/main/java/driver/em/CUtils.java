@@ -72,9 +72,13 @@ public class CUtils {
 	//TODO: make this an immutable map
 	private static Map<String,Object> defParms = new HashMap<>(); 
 	
+	private static Map<String,Object> defLocalOne = new HashMap<>();
 	static {
 		defParms.put(ReqConstants.CONSISTENCY.toString(), ConsistencyLevel.LOCAL_QUORUM);
-		defParms.put(ReqConstants.RETRY_POLICY.toString(), RetryPolicy.RetryDecision.rethrow());
+		defParms.put(ReqConstants.RETRY_POLICY.toString(), DefaultRetryPolicy.INSTANCE);
+		
+		defLocalOne.put(ReqConstants.CONSISTENCY.toString(), ConsistencyLevel.LOCAL_ONE);
+		defLocalOne.put(ReqConstants.RETRY_POLICY.toString(), DefaultRetryPolicy.INSTANCE);
 	}
 	
 	public static Session createSession(Cluster cluster, String keyspace){
@@ -85,6 +89,9 @@ public class CUtils {
 	
 	public static Map<String,Object> getDefaultParams() {
 		return defParms;
+	}
+	public static Map<String,Object> getDefaultLocalParams() {
+		return defLocalOne;
 	}
 	public static Map<String,Object> getDefParamsWithConsistency(ConsistencyLevel level) {
 		HashMap<String, Object> map = new HashMap<>(defParms);
