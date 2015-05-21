@@ -24,7 +24,7 @@ public class DefaultEntityManager<K,E> extends AbstractEntityManager<K, E> {
 	
 	public DefaultEntityManager(Session session,Class<E> entityClass,Map<String,Object> requestParameters) {
 		this(session,entityClass);
-		
+		this.defaultRequestParameters = requestParameters;
 	}
 	
 	public void persist(E entity) {
