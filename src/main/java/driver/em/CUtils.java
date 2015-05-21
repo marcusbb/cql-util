@@ -98,12 +98,7 @@ public class CUtils {
 		map.put(ReqConstants.CONSISTENCY.toString(), level);
 		return map;
 	}
-	public static Map<String,Object> getDefParamsWithConsistency(ConsistencyLevel level,BatchStatement batch) {
-		HashMap<String, Object> map = new HashMap<>(defParms);
-		map.put(ReqConstants.CONSISTENCY.toString(), level);
-		map.put(ReqConstants.BATCH.toString(), batch);
-		return map;
-	}
+	
 	
 	public static Cluster createCluster(CassConfig context){
 		//pooling options

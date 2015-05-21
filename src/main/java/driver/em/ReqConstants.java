@@ -21,13 +21,5 @@ public enum ReqConstants {
 	 */
 	RETRY_POLICY,
 	
-	/**
-	 * BATCH - 
-	 * This is how it would work: 
-	 * - client creates batch
-	 * - it gets submitted with each operation
-	 * - client executes batch complete
-	 * 
-	 */
-	BATCH;
+	
 }
