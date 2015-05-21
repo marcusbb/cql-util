@@ -7,11 +7,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 
@@ -108,6 +110,16 @@ public class SampleEntityTests extends TestBase {
 		
 		deserialize(found.blob);
 		
+		
+	}
+	@Test
+	public void testPsCache() {
+		DefaultEntityManager<String, SampleEntity> em = new DefaultEntityManager<>(session, SampleEntity.class,CUtils.getDefaultPSCacheParams());
+		SampleEntity entity = new SampleEntity("with_cache");
+		
+		em.persist(entity);
+		Map<String,PreparedStatement> cache = DefaultEntityManager.getCachedStatements();
+		Assert.assertEquals(1, cache.size());
 		
 	}
 
