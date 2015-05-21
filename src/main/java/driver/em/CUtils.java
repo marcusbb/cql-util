@@ -73,12 +73,17 @@ public class CUtils {
 	private static Map<String,Object> defParms = new HashMap<>(); 
 	
 	private static Map<String,Object> defLocalOne = new HashMap<>();
+	
+	private static Map<String,Object> defLocalOneCached = new HashMap<>();
 	static {
 		defParms.put(ReqConstants.CONSISTENCY.toString(), ConsistencyLevel.LOCAL_QUORUM);
 		defParms.put(ReqConstants.RETRY_POLICY.toString(), DefaultRetryPolicy.INSTANCE);
 		
 		defLocalOne.put(ReqConstants.CONSISTENCY.toString(), ConsistencyLevel.LOCAL_ONE);
 		defLocalOne.put(ReqConstants.RETRY_POLICY.toString(), DefaultRetryPolicy.INSTANCE);
+		
+		defLocalOneCached = new HashMap<>(defLocalOne);
+		defLocalOneCached.put(ReqConstants.PREPARED_CACHE.toString(), Boolean.TRUE);
 	}
 	
 	public static Session createSession(Cluster cluster, String keyspace){
@@ -93,6 +98,10 @@ public class CUtils {
 	public static Map<String,Object> getDefaultLocalParams() {
 		return defLocalOne;
 	}
+	public static Map<String,Object> getDefaultPSCacheParams() {
+		return defLocalOneCached; 
+	}
+	
 	public static Map<String,Object> getDefParamsWithConsistency(ConsistencyLevel level) {
 		HashMap<String, Object> map = new HashMap<>(defParms);
 		map.put(ReqConstants.CONSISTENCY.toString(), level);
