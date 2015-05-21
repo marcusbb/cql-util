@@ -3,6 +3,7 @@ package driver.em;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +57,11 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	
 	private EntityConfig<E> entityConfig;
 	
-	private static ThreadLocal<Map<String,PreparedStatement>> cachedStatements = new ThreadLocal<>();
-	
+	private static ThreadLocal<Map<String,PreparedStatement>> cachedStatements = null;
+	static {
+		cachedStatements = new ThreadLocal<>();
+		cachedStatements.set(new HashMap<String, PreparedStatement>());
+	}
 	public AbstractEntityManager(Session session) {
 		this.session = session;
 	}
@@ -96,7 +100,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			}
 			
 			defineParams(statement, requestParameters);
-			rs = getSession().execute( ss );
+			rs = getSession().execute( statement );
 			
 		}
 		else {
