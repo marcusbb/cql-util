@@ -16,6 +16,7 @@ import org.junit.Test;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.SimpleStatement;
 
 /**
  * 
@@ -119,7 +120,19 @@ public class SampleEntityTests extends TestBase {
 		
 		em.persist(entity);
 		Map<String,PreparedStatement> cache = DefaultEntityManager.getCachedStatements();
-		Assert.assertEquals(1, cache.size());
+		SimpleStatement ss = em.getUpdateStatement(entity, true);
+		
+		Assert.assertTrue(cache.containsKey(ss.getQueryString()));
+				
+		em.remove("with_cache");
+		
+		Assert.assertTrue(cache.containsKey(em.getDelStatement(entity, true).getQueryString()));
+		
+		
+		em.find("with_cache");
+		em.find("with_cache");
+		em.find("with_cache");
+		Assert.assertTrue(cache.containsKey(em.getAllQuery(entity, true).getQueryString()));
 		
 	}
 

@@ -28,7 +28,7 @@ public class BatchStatementTest extends TestBase {
 		BatchStatement bs = new BatchStatement();
 		bs.add(em.persistStatement(entity1));
 		bs.add(em.persistStatement(entity2));
-		em.executeBatch(bs);
+		em.executeBatch(bs, CUtils.getDefaultParams());
 		
 		Assert.assertNotNull(em.find("An_id"));
 		Assert.assertNotNull(em.find("An_id2"));

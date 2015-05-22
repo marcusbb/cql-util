@@ -65,7 +65,7 @@ public interface EntityManager<K, E>{
 	 */
 	Collection<E> findBy(String query, Object[] values,Map<String, Object> requestParameters);
 	
-	void executeBatch(BatchStatement bs);
+	void executeBatch(BatchStatement bs,Map<String, Object> requestParameters);
 	
 	/**
 	 * Builds an UPDATE or INSERT statement that can be used

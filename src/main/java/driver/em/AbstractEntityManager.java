@@ -57,6 +57,8 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 	
 	private EntityConfig<E> entityConfig;
 	
+	private static String PREP_KEY = ReqConstants.PREPARED_CACHE.toString();
+	
 	private static ThreadLocal<Map<String,PreparedStatement>> cachedStatements = null;
 	static {
 		cachedStatements = new ThreadLocal<>();
@@ -126,12 +128,33 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		
 			
 		// build and execute the statement
-		SimpleStatement ss = entityConfig.getDelStatement(key);
+		SimpleStatement ss = getDelStatement(key,requestParameters.containsKey(ReqConstants.PREPARED_CACHE.toString()) );
 		execute(ss, key, requestParameters);
 		
 		
 	}
 
+	public SimpleStatement getDelStatement(Object idObj,boolean prepared) {
+		StringBuilder builder = new StringBuilder("delete from ").append(entityConfig.tableName);
+		ArrayList<Object> valueList = new ArrayList<>();
+		
+	
+		builder.append(entityConfig.getIdPredicate());
+		if (entityConfig.embedded == null) {
+			valueList.add(idObj);
+		} else {
+			for (ColumnMapping mapping:entityConfig.embedded.columns) {
+				valueList.add(mapping.get(idObj));
+			}
+		}
+		SimpleStatement ss = null;
+		if (!prepared)
+			ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		else
+			ss = new SimpleStatementUnConverted(builder.toString(),valueList.toArray());
+		
+		return ss;
+	}
 
 	@Override
 	public E find(K key, Map<String, Object> requestParameters) {
@@ -139,7 +162,7 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		if (entityConfig != null) {
 			
 			//build and execute the statement
-			SimpleStatement ss = entityConfig.getAllQuery(key);
+			SimpleStatement ss = getAllQuery(key,isPrepared(requestParameters));
 			ResultSet result = execute(ss, key, requestParameters);
 			
 			Iterator<Row> resultIter = result.iterator();
@@ -165,11 +188,37 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 		
 	}
 
+	/**
+	 * Guess we could parameterize the "key" class as well.
+	 * @param idObj
+	 * @return
+	 */
+	protected SimpleStatement getAllQuery(Object idObj, boolean prepared) {
+		StringBuilder builder = new StringBuilder("select * from ").append(entityConfig.tableName);
+		ArrayList<Object> valueList = new ArrayList<>();
+		
+	
+		builder.append(entityConfig.getIdPredicate());
+		if (entityConfig.embedded == null) {
+			valueList.add(idObj);
+		} else {
+			for (ColumnMapping mapping:entityConfig.embedded.columns) {
+				valueList.add(mapping.get(idObj));
+			}
+		}
+		SimpleStatement ss = null;
+		if (!prepared)
+			ss = new SimpleStatement(builder.toString(),valueList.toArray());
+		else
+			ss = new SimpleStatementUnConverted(builder.toString(),valueList.toArray());
+		return ss;
+	}
+	
 
 	@Override
-	public void executeBatch(BatchStatement bs) {
+	public void executeBatch(BatchStatement bs,Map<String, Object> requestParameters) {
 		//no determination of routing key - as it's assumed muliple 
-		//
+		defineParams(bs, requestParameters);
 		session.execute(bs);
 		
 	}
@@ -267,6 +316,10 @@ public abstract class AbstractEntityManager<K,E> implements EntityManager<K, E> 
 			idObj = (K)entityConfig.embedded.get(entity);
 		}
 		return idObj;
+	}
+	private boolean isPrepared(Map<String,Object> requestParameters) {
+		
+		return requestParameters.containsKey(PREP_KEY) && requestParameters.get(PREP_KEY).equals(Boolean.TRUE);
 	}
 	/**
 	 * 

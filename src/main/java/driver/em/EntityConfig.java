@@ -211,46 +211,8 @@ public class EntityConfig<T> {
 		return ss;
 	}
 	
-	/**
-	 * Guess we could parameterize the "key" class as well.
-	 * @param idObj
-	 * @return
-	 */
-	public SimpleStatement getAllQuery(Object idObj) {
-		StringBuilder builder = new StringBuilder("select * from ").append(tableName);
-		ArrayList<Object> valueList = new ArrayList<>();
-		
 	
-		builder.append(getIdPredicate());
-		if (embedded == null) {
-			valueList.add(idObj);
-		} else {
-			for (ColumnMapping mapping:embedded.columns) {
-				valueList.add(mapping.get(idObj));
-			}
-		}
-		SimpleStatement ss = new SimpleStatement(builder.toString(),valueList.toArray());
-		//System.out.println("query ss : " + ss.getQueryString());
-		return ss;
-	}
 	
-	public SimpleStatement getDelStatement(Object idObj) {
-		StringBuilder builder = new StringBuilder("delete from ").append(tableName);
-		ArrayList<Object> valueList = new ArrayList<>();
-		
-	
-		builder.append(getIdPredicate());
-		if (embedded == null) {
-			valueList.add(idObj);
-		} else {
-			for (ColumnMapping mapping:embedded.columns) {
-				valueList.add(mapping.get(idObj));
-			}
-		}
-		SimpleStatement ss = new SimpleStatement(builder.toString(),valueList.toArray());
-		
-		return ss;
-	}
 	/**
 	 * Might move this out to a utility class.
 	 * 
