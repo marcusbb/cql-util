@@ -31,6 +31,7 @@ public abstract class TestBase {
 	
 	protected static String [] cHosts = {"localhost"};
 	
+	protected static CQLDataLoader loader = null;
 	
 	protected static CassandraCQLUnit cassandraCQLUnit = null;
 	
@@ -48,7 +49,7 @@ public abstract class TestBase {
 		config.setNativePort(9142);
 		Cluster cluster = CUtils.createCluster(config);
 		//cassandraCQLUnit = new CassandraCQLUnit(new ClassPathCQLDataSet("olympia.cql",true, ks));
-		CQLDataLoader loader = new CQLDataLoader(cluster.connect());
+		loader = new CQLDataLoader(cluster.connect());
 		loader.load(new ClassPathCQLDataSet("olympia.cql",true, ks));
 		session = loader.getSession();
 		//session = CUtils.createSession(cluster, ks);
@@ -113,6 +114,12 @@ public abstract class TestBase {
 				oin.close();
 			}
 		}
+	}
+	public static void loadCql(String file) {
+		loader.load(new ClassPathCQLDataSet(file,true, ks));
+	}
+	public static void loadCql(String file,String keyspace) {
+		loader.load(new ClassPathCQLDataSet(file,true, keyspace));
 	}
 	
 
