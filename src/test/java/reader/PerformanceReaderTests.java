@@ -19,6 +19,7 @@ import com.datastax.driver.core.Session;
 
 import driver.em.CUtils;
 import driver.em.DefaultEntityManager;
+import driver.em.TestBase;
 
 /**
  * 
@@ -26,7 +27,7 @@ import driver.em.DefaultEntityManager;
  * 
  * 
  */
-public class PerformanceReaderTests {
+public class PerformanceReaderTests extends TestBase {
 
 	static CQLRowReader reader = null;
 	static Session session = null;
@@ -34,8 +35,9 @@ public class PerformanceReaderTests {
 	
 	
 	@BeforeClass
-	public static void beforeClass() throws Exception {
-
+	public static void bc() throws Exception {
+		TestBase.beforeClass();
+		TestBase.loadCql("reader/schema.cql", "icrs");
 		JAXBContext jc = JAXBContext.newInstance(ReaderConfig.class);
 		Unmarshaller unmarshaller = jc.createUnmarshaller();
 		InputStream ins = Thread.currentThread().getContextClassLoader()
@@ -73,25 +75,13 @@ public class PerformanceReaderTests {
 		return r;
 	}
 
-	//@Before
-	public void before() {
-		try {
-			session.execute("drop table devices");
-		} catch (Exception e) {
-			// this is OK
-		}
-		session.execute("create table devices (  id text, name text, value text,  value_ascii ascii, value_d bigint,  PRIMARY KEY (id, name) )");
+	
 
-	}
-
-	@Test
-	public void insertParallel() throws Exception {
-		insertSeqDev(1000000, 10);
-	}
+	
 	
 	@Test
-	public void testRead() {
-		//insertSeqDev(100000);
+	public void testRead() throws Exception {
+		insertSeqDev(100000, 10);
 		
 		reader.read();
 		

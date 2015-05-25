@@ -1,4 +1,11 @@
 
+CREATE TABLE wide_row (
+  id text,
+  name text,
+  value text,
+  PRIMARY KEY ((id), name)
+);
+
 CREATE TABLE devices (
   id text,
   name text,

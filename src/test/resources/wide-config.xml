@@ -5,8 +5,8 @@
 		<concurrentLocal>100</concurrentLocal>
 		<concurrentRemote>100</concurrentRemote>
 		<connectionTimeoutMs>5000</connectionTimeoutMs>
-		<contactHostsName>marcus-v4.rim.net</contactHostsName>
-		<contactHostsName>marcus-v3.rim.net</contactHostsName>
+		<contactHostsName>localhost</contactHostsName>
+		
 		
 		<coreConnectionsPerLocalHost>2</coreConnectionsPerLocalHost>
 		<coreConnectionsPerRemoteHost>2</coreConnectionsPerRemoteHost>
@@ -15,14 +15,14 @@
 		<maxConnectionsPerLocalHost>2</maxConnectionsPerLocalHost>
 		<maxConnectionsPerRemoteHost>2</maxConnectionsPerRemoteHost>
 		<maxReconnectDelay>600000</maxReconnectDelay>
-		<nativePort>9042</nativePort>
+		<nativePort>9142</nativePort>
 		<readTimeoutMs>120000</readTimeoutMs>
 		<soLinger>5000</soLinger>
 		<tcpNoDelay>false</tcpNoDelay>
 	</cassConfig>
 	<keyspace>icrs</keyspace>
 	<table>wide_row</table>
-	<pageSize>1000</pageSize>
+	<pageSize>100</pageSize>
 	
 	
 	<otherCols>value</otherCols>

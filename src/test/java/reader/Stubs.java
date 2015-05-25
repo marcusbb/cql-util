@@ -9,8 +9,7 @@ public class Stubs {
 
 		@Override
 		public RowReaderTask<Void> newTask() throws Exception {
-			// TODO Auto-generated method stub
-			return null;
+			return new MyReaderTask();
 		}
 
 		@Override

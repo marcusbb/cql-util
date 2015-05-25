@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
@@ -15,6 +16,7 @@ import javax.xml.bind.Unmarshaller;
 
 import junit.framework.Assert;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,15 +48,17 @@ import driver.em.TestBase;
  * 
  * 
  */
-public class WideRowTests {
+public class WideRowTests extends TestBase {
 
 	
-	static Session session = null;
+	
 	static JobBootStrap boot = null;
+	static final AtomicLong count = new AtomicLong();
 	
 	@BeforeClass
-	public static void beforeClass() throws Exception {
-
+	public static void bc() throws Exception {
+		TestBase.beforeClass();
+		TestBase.loadCql("reader/schema.cql", "icrs");
 		boot = new JobBootStrap() {
 			
 			@Override
@@ -64,6 +68,10 @@ public class WideRowTests {
 		};
 		boot.bootstrap(ReaderConfig.class.getName(), Thread.currentThread().getContextClassLoader().getResourceAsStream("wide-config.xml"));
 		
+	}
+	@After
+	public void after() {
+		count.set(0L);
 	}
 	
 	static class WideRowJob extends ReaderJob<Void> {
@@ -75,7 +83,7 @@ public class WideRowTests {
 				@Override
 				public Void process(Row row, ColumnDefinitions colDef,
 						ExecutionInfo execInfo) {
-					// TODO Auto-generated method stub
+					count.getAndIncrement();
 					return null;
 				}
 			};
@@ -118,17 +126,12 @@ public class WideRowTests {
 	}
 
 	
-	//@Test
-	public void testPerform100K() {
-		insertSeqDev2(1,100000);
-		
-		//reader.read();
-		
-	}
+	
 	@Test
 	public void read() {
+		insertSeqDev2(10, 1000);
 		boot.runJob();
-		
+		Assert.assertEquals(10*1000L, count.get());
 	}
 	public void insertSeqDev2(int rowNum,int colCount) {
 		DefaultEntityManager<WideRow.Id, WideRow> em = new DefaultEntityManager<>(
@@ -139,7 +142,7 @@ public class WideRowTests {
 		for (int i = 0; i < rowNum; i++) {
 			for (int j=0;j<colCount;j++) {
 				WideRow entity = new WideRow("id-" +pref+"-"+ i, "name-" + j, "val-" + j);
-				em.persist(entity, CUtils.getDefaultParams());
+				em.persist(entity, CUtils.getDefaultPSCacheParams());
 			}
 		}
 	}

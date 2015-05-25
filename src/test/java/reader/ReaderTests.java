@@ -16,7 +16,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
 
 import driver.em.CUtils;
 import driver.em.CassConfig;
@@ -27,22 +31,21 @@ import driver.em.TestBase;
 
 /**
  * 
- * this needs to be run:
- * 
+ *  
  * 
  */
-public class ReaderTests {
+public class ReaderTests extends TestBase {
 
 	static CQLRowReader reader = null;
 	
 	static Session session = null;
-	static Cluster cluster = null;
+	
 	
 	@BeforeClass
-	public static void beforeClass() throws Exception {
-
-		cluster = CUtils.createCluster(new CassConfig());
-		session = cluster.connect("icrs");	
+	public static void bc() throws Exception {
+		TestBase.beforeClass();
+		TestBase.loadCql("reader/schema.cql", "icrs");
+		session = TestBase.session;
 	}
 
 	@Before
@@ -53,24 +56,24 @@ public class ReaderTests {
 				.getResourceAsStream("reader-config.xml");
 		reader = new CQLRowReader(new Stubs.MyReaderJob());
 		reader.config = (ReaderConfig) unmarshaller.unmarshal(ins);
-
-		reader.cluster = cluster;
+		reader.config.setTable("devices");
+		PKConfig.ColumnInfo []partitionkey = {new PKConfig.ColumnInfo("id", DataType.ascii())};
+		PKConfig.ColumnInfo []clusterkey = {new PKConfig.ColumnInfo("id", DataType.ascii())};
+		
+		PKConfig pk = new PKConfig(partitionkey, clusterkey);
+		reader.config.setPkConfig(pk);
+		
 		reader.session = session;
-		
-		
-		try {
-			session.execute("drop table devices");
-		} catch (Exception e) {
-			// this is OK
+	
+		ResultSet rs = session.execute("select id from devices");
+		for (Row row:rs.all()) {
+			SimpleStatement ss = new SimpleStatement("delete from devices where id = ?", row.getString(0));
+			session.execute(ss);
 		}
-		session.execute("create table devices (  id text, name text, value text,  value_ascii ascii, value_d bigint,  PRIMARY KEY (id, name) )");
-
+				
 	}
 
-	@AfterClass
-	public static void afterClass() {
-		cluster.close();
-	}
+	
 	// put in a number less than the page size
 	@Test
 	public void testUnderFlow() {
@@ -78,7 +81,7 @@ public class ReaderTests {
 		insertSeqDev(100);
 
 		reader.read();
-
+		Assert.assertEquals(new Long(100), reader.getTotalReadCount());
 	}
 
 	
@@ -87,12 +90,14 @@ public class ReaderTests {
 		insertSeqDev(12);
 		reader.config.setPageSize(5);
 		reader.read();
+		Assert.assertEquals(new Long(12), reader.getTotalReadCount());
 	}
 	@Test
 	public void testOverFlowPage100Size150() {
 		insertSeqDev(150);
 		reader.config.setPageSize(100);
 		reader.read();
+		Assert.assertEquals(new Long(150), reader.getTotalReadCount());
 	}
 
 	// larger but a modulus of page size
@@ -101,6 +106,7 @@ public class ReaderTests {
 		insertSeqDev(1000);
 		reader.config.setPageSize(100);
 		reader.read();
+		Assert.assertEquals(new Long(1000), reader.getTotalReadCount());
 	}
 
 	@Test
@@ -109,11 +115,12 @@ public class ReaderTests {
 		insertSeqDev2(100, 5);
 		reader.config.setPageSize(100);
 		reader.read();
-		
+		Assert.assertEquals(new Long(100*5), reader.getTotalReadCount());
 	}
 	public void insertSeqDev(int num) {
 		DefaultEntityManager<Device.Id, Device> em = new DefaultEntityManager<>(
 				session, Device.class);
+		
 		for (int i = 0; i < num; i++) {
 			Device entity = new Device("id-" + i, "name-" + i, "val-" + i);
 			em.persist(entity, CUtils.getDefaultParams());
@@ -131,18 +138,5 @@ public class ReaderTests {
 	}
 	
 	
-	@Test
-	public void testByteBufferEquality() {
-		String one = "one";
-		
-		ByteBuffer bb = Composite.toByteBuffer(new Object[]{"one","two"});
-		ByteBuffer bb2 = Composite.toByteBuffer(new Object[]{ByteBuffer.wrap(one.getBytes()),"two"});
-		ByteBuffer bb3 = Composite.toByteBuffer(new Object[]{"two","one"});
-		bb2.limit();bb2.array();
-		
-		//bb3.flip();
-		Assert.assertTrue(bb.equals(bb2));
-		Assert.assertFalse(bb.equals(bb3));
-		
-	}
+	
 }
