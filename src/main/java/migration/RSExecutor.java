@@ -40,11 +40,7 @@ public class RSExecutor implements RSExecutorMBean {
 	private static String KEYSPACE_LOGGER_PREFIX = "cql.keyspace.";
 	private static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
 	
-	private static long defaultKeepAlive = 60; 
-	private static TimeUnit defaultKeepAliveTU = TimeUnit.SECONDS;
-	private static int defaultQueueCapacity = 1000;
-	private static int corePoolSize = 5;
-	private static int maxPoolSize = 10;
+	
 	
 	protected String[] keyspaces;
 	protected Map<String, Session> sessions;
@@ -71,7 +67,7 @@ public class RSExecutor implements RSExecutorMBean {
 		this.config = config;
 		keyspaces = retrieveKeyspaces();
 		
-		exec = new  ThreadPoolExecutor(corePoolSize, maxPoolSize, defaultKeepAlive,  defaultKeepAliveTU,  new ArrayBlockingQueue<Runnable>(defaultQueueCapacity));
+		exec = new  ThreadPoolExecutor(config.getCorePoolSize(), config.getMaxPoolSize(), config.getTpKeepAlive(),  config.getTpKeepAliveTU(),  new ArrayBlockingQueue<Runnable>(config.getTpQueueCapacity()));
 		if(config.getConsistencyLevel()==null){
 			config.setConsistencyLevel(ConsistencyLevel.ONE);
 		}

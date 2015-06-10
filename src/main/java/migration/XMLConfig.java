@@ -2,6 +2,7 @@ package migration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -38,6 +39,12 @@ public class XMLConfig {
 	
 	//used for testing purposes only
 	boolean bypassCassandra;
+	
+	private long tpKeepAlive = 60; 
+	private TimeUnit tpKeepAliveTU = TimeUnit.SECONDS;
+	private int tpQueueCapacity = 1000;
+	private int corePoolSize = 5;
+	private int maxPoolSize = 10;
 	
 	public String getSqlQuery() {
 		return sqlQuery;
@@ -142,15 +149,63 @@ public class XMLConfig {
 		this.bypassCassandra = bypassCassandra;
 	}
 
+	public long getTpKeepAlive() {
+		return tpKeepAlive;
+	}
+
+	public void setTpKeepAlive(long tpKeepAlive) {
+		this.tpKeepAlive = tpKeepAlive;
+	}
+
+	public TimeUnit getTpKeepAliveTU() {
+		return tpKeepAliveTU;
+	}
+
+	public void setTpKeepAliveTU(TimeUnit tpKeepAliveTU) {
+		this.tpKeepAliveTU = tpKeepAliveTU;
+	}
+
+	public int getTpQueueCapacity() {
+		return tpQueueCapacity;
+	}
+
+	public void setTpQueueCapacity(int tpQueueCapacity) {
+		this.tpQueueCapacity = tpQueueCapacity;
+	}
+
+	public int getCorePoolSize() {
+		return corePoolSize;
+	}
+
+	public void setCorePoolSize(int corePoolSize) {
+		this.corePoolSize = corePoolSize;
+	}
+
+	public int getMaxPoolSize() {
+		return maxPoolSize;
+	}
+
+	public void setMaxPoolSize(int maxPoolSize) {
+		this.maxPoolSize = maxPoolSize;
+	}
+
 	@Override
 	public String toString() {
 		return "XMLConfig [jdbcUrl=" + jdbcUrl + ", jdbcUsername="
-				+ jdbcUsername + ", jdbcDriver=" + jdbcDriver + ", sqlQuery="
-				+ sqlQuery + ", keyspace=" + keyspace + ", cassConfig="
-				+ cassConfig + ", rsToCqlConfigs=" + rsToCqlConfigs
-				+ ", asyncWrites=" + asyncWrites + ", batchWrites="
-				+ batchWrites + ", consistencyLevel=" + consistencyLevel
-				+ ", bypassCassandra=" + bypassCassandra + "]";
+				+ jdbcUsername + ", jdbcPassword=" + jdbcPassword
+				+ ", jdbcDriver=" + jdbcDriver + ", sqlQuery=" + sqlQuery
+				+ ", keyspace=" + keyspace + ", cassConfig=" + cassConfig
+				+ ", rsToCqlConfigs=" + rsToCqlConfigs + ", asyncWrites="
+				+ asyncWrites + ", batchWrites=" + batchWrites
+				+ ", consistencyLevel=" + consistencyLevel
+				+ ", bypassCassandra=" + bypassCassandra + ", tpKeepAlive="
+				+ tpKeepAlive + ", tpKeepAliveTU=" + tpKeepAliveTU
+				+ ", tpQueueCapacity=" + tpQueueCapacity + ", corePoolSize="
+				+ corePoolSize + ", maxPoolSize=" + maxPoolSize + "]";
 	}
+
+	
+
+	
 
 }
