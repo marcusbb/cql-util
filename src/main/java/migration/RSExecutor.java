@@ -424,6 +424,17 @@ public class RSExecutor implements RSExecutorMBean {
 			
 	}
 
+	
+	@Override
+	public long getJdbcRowCount() {
+		return requestCount;
+	}
+
+	@Override
+	public long getCqlProcessed() {
+		return asyncResultsCount.get();
+	}
+
 	@Override
 	public String getStateAsString() {
 		return getExecutorState().toString();

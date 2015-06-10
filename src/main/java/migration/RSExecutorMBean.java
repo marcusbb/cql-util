@@ -10,4 +10,8 @@ public interface RSExecutorMBean {
 	
 	String getStateAsString();
 	
+	long getJdbcRowCount();
+	
+	long getCqlProcessed();
+	
 }

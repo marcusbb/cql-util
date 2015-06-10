@@ -3,10 +3,13 @@ package migration;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +36,10 @@ public class Main {
 	public void execute() throws Exception{
 		
 		XMLConfig config = (XMLConfig)JAXBUtil.unmarshalXmlFile(fileName, XMLConfig.class);
-		
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		try{
 			RSExecutor executor = new RSExecutor(config);
+			mbs.registerMBean(executor, new ObjectName("cqlutil:type=rsexecutor"));
 			executor.execute();
 		}
 		catch(Exception e){
@@ -84,8 +88,7 @@ public class Main {
 			fileName = args[0];
 		}
 		
-		Main main = new Main(fileName);
-		main.execute();
+		new Main(fileName).execute();
 		
 		System.exit(0);
 	}
