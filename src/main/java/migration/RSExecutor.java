@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -27,11 +29,13 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.shaded.netty.util.Timeout;
+import com.datastax.shaded.netty.util.TimerTask;
 
 import driver.em.CUtils;
 
 
-public class RSExecutor {
+public class RSExecutor implements RSExecutorMBean {
 	
 	private static String KEYSPACE_LOGGER_PREFIX = "cql.keyspace.";
 	private static Logger logger =  LoggerFactory.getLogger(RSExecutor.class);
@@ -53,6 +57,10 @@ public class RSExecutor {
 	protected Map<String, Logger> keyspaceLoggers;
 	protected Map<String, List<com.datastax.driver.core.RegularStatement>> keyspaceBatchStatements;
 	protected ThreadPoolExecutor exec;
+	
+	private ExecutorState state = ExecutorState.INIT;
+	private CountDownLatch latch = null;
+	
 	
 	XMLConfig config;
 	long requestCount;
@@ -128,7 +136,8 @@ public class RSExecutor {
 		return operationStatements;
 	}
 	
-	public void execute() throws SQLException, ClassNotFoundException {
+	public void execute() throws SQLException, ClassNotFoundException,InterruptedException {
+		
 		requestCount = 0l;
 		cqlRequestCount = 0l;
 		asyncResultsCount.set(0l);
@@ -143,6 +152,7 @@ public class RSExecutor {
 					ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			
 			long startExec = System.currentTimeMillis();
+			state = ExecutorState.SQL_EXECUTION;
 			rs = stmt.executeQuery(config.getSqlQuery());
 			long endExec = System.currentTimeMillis();
 			long elapsed = endExec-startExec;
@@ -151,16 +161,11 @@ public class RSExecutor {
 
 			//build the Row and RowtoMap
 			List<RowToCql> operationStatements = getOperationStatements(rs);
+			state = ExecutorState.RUNNING;
+						
 			
-			while (rs.next()) {
-					if (requestCount++ % 1000 == 0){
-						logger.info("completed db rows: " + requestCount);
-					}
-
-					for (RowToCql row: operationStatements) {
-						performCassandraExecution(row);
-					}
-			}
+			run(operationStatements);
+			
 			
 			cqlRequestCount = (requestCount * operationStatements.size());
 			processRemainingStatements();
@@ -172,7 +177,23 @@ public class RSExecutor {
 		}
 	}
 	
-	public void cleanup(){
+	private void run(List<RowToCql> operationStatements) throws SQLException,InterruptedException {
+		while (rs.next() ) {
+			
+			if (requestCount++ % 1000 == 0){
+				logger.info("completed db rows: " + requestCount);
+			}
+
+			for (RowToCql row: operationStatements) {
+				performCassandraExecution(row);
+			}
+			if (state == ExecutorState.SUSPENDED) {
+				latch.await();
+			}
+		}
+		
+	}
+ 	public void cleanup(){
 		if(config.asyncWrites && !config.bypassCassandra){
 			
 			while(asyncResultsCount.get() < cqlRequestCount){
@@ -358,4 +379,56 @@ public class RSExecutor {
 			}
 		}
 	}
+	
+	public ExecutorState getExecutorState() {
+		return state;
+	}
+
+	@Override
+	public synchronized void suspend() {
+		if (state == ExecutorState.RUNNING) {
+			latch = new CountDownLatch(1);
+			state = ExecutorState.SUSPENDED;
+		} else
+			throw new IllegalStateException("Can only suspend from RUNNING state");
+	}
+
+	
+	@Override
+	public synchronized void suspendForMins(int mins) {
+		if (state == ExecutorState.RUNNING) {
+			latch = new CountDownLatch(1);
+			state = ExecutorState.SUSPENDED;
+			new Timer().schedule(new java.util.TimerTask() {
+				
+				@Override
+				public void run() {
+					resume();					
+				}
+			}, TimeUnit.MINUTES.toMillis(mins));
+		}else {
+			throw new IllegalStateException("Can only suspend from RUNNING state");
+		}
+		
+	}
+
+	@Override
+	public synchronized void resume() {
+		if (state == ExecutorState.SUSPENDED && latch != null) {
+			
+			state = ExecutorState.RUNNING;
+			latch.countDown();
+		}else {
+			throw new IllegalStateException("Can only resume from SUSPENDED state");
+		}
+			
+	}
+
+	@Override
+	public String getStateAsString() {
+		return getExecutorState().toString();
+	}
+	
+	
+	
 }
