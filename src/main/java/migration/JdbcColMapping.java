@@ -36,6 +36,8 @@ public class JdbcColMapping {
 	
 	public boolean isPK = false;
 	
+	
+	
 	@XmlElement(name="type")
 	public String getTypeInStr() {
 		return type.getName().name().toString();

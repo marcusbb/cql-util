@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.shaded.netty.util.Timeout;
 import com.datastax.shaded.netty.util.TimerTask;
@@ -216,12 +219,26 @@ public class RSExecutor implements RSExecutorMBean {
 		
 		final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
 		
-		com.datastax.driver.core.RegularStatement statement = row.getStatement();
+		com.datastax.driver.core.RegularStatement statement = row.getInsertStatement();
 		try{
 			boolean performBatchWrites = (config.batchWrites > 1);
 			boolean writeToCassandra = !performBatchWrites;
 			int batchSize = 1;
 			
+			//Compare jdbcTimestamp column if required
+			if (config.getMapRsCqlConfig().get(keyspace).jdbcTimestampCol != null) {
+				//TODO, what is the consistency?
+				SimpleStatement ss =  new SimpleStatement(row.getReadTimestampCQL());
+				com.datastax.driver.core.ResultSet cqlTs = sessions.get(keyspace).execute(ss);
+				Timestamp jdbcTs = rs.getTimestamp(config.getMapRsCqlConfig().get(keyspace).jdbcTimestampCol);
+				
+				Row tsrow = cqlTs.one();
+				if ( tsrow != null && jdbcTs.getTime() < tsrow.getLong(0)) {
+					logger.info("skipping row: " + row.getIdPredicate());
+					return;
+				}
+				
+			}
 			List<com.datastax.driver.core.RegularStatement> statementList = keyspaceBatchStatements.get(keyspace);
 			if(performBatchWrites){
 				statementList.add(statement);

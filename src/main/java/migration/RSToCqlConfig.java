@@ -19,6 +19,15 @@ public class RSToCqlConfig {
 	
 	private JdbcColMapping valueMapping;
 	
+	/**
+	 * Indicates the jdbc col for comparison purposes
+	 * Will also use this col as the write timestamp of cql
+	 * The consequence is a very slow migration where 
+	 * a read needs to be done for every write
+	 */
+	public String jdbcTimestampCol = null;
+	
+	
 	public RSToCqlConfig() {}
 	
 	public RSToCqlConfig(List<JdbcColMapping> columns) {

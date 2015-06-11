@@ -1,7 +1,9 @@
 package migration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -30,6 +32,8 @@ public class XMLConfig {
 	private CassConfig cassConfig;
 	
 	List<RSToCqlConfig> rsToCqlConfigs = new ArrayList<>();
+	
+	private Map<String,RSToCqlConfig> mapRsCqlConfig = new HashMap<String, RSToCqlConfig>();
 	
 	boolean asyncWrites;
 	
@@ -71,10 +75,13 @@ public class XMLConfig {
 
 	public void setRsToCqlConfigs(List<RSToCqlConfig> rsToCqlConfigs) {
 		this.rsToCqlConfigs = rsToCqlConfigs;
+		resetMap();
+		
 	}
 
 	public void addRsToCqlConfig(RSToCqlConfig rsToCqlConfig) {
 		this.rsToCqlConfigs.add(rsToCqlConfig);
+		resetMap();
 	}
 
 	public String getJdbcUrl() {
@@ -187,6 +194,20 @@ public class XMLConfig {
 
 	public void setMaxPoolSize(int maxPoolSize) {
 		this.maxPoolSize = maxPoolSize;
+	}
+
+	private void resetMap() {
+		if (keyspace != null) {
+			mapRsCqlConfig = new HashMap<>(rsToCqlConfigs.size());
+			for (RSToCqlConfig config:rsToCqlConfigs) {
+				mapRsCqlConfig.put(keyspace, config);
+			}
+		}
+	}
+	
+	public Map<String, RSToCqlConfig> getMapRsCqlConfig() {
+		
+		return mapRsCqlConfig;
 	}
 
 	@Override

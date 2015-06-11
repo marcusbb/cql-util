@@ -24,6 +24,8 @@ public class RowToCql {
 	
 	public String keyspace;
 	
+	protected String jdbcTimestampCol;
+	
 	public RowToCql(ResultSet rs,String cqlTable,JdbcColMapping []mapping) {
 		this.rs = rs;
 		this.cqlTable = cqlTable;
@@ -35,6 +37,10 @@ public class RowToCql {
 		this.cqlTable = cqlTable;
 		this.colMapping = mapping;
 		this.keyspace = keyspace;
+	}
+	public RowToCql(ResultSet rs, String cqlTable,JdbcColMapping []mapping, String keyspace,String jdbcTimestampCol) {
+		this(rs, cqlTable, mapping, keyspace);
+		this.jdbcTimestampCol = jdbcTimestampCol;
 	}
 	
 	public String getCQL() throws SQLException {
@@ -54,7 +60,26 @@ public class RowToCql {
 		StringBuilder builder = new StringBuilder("INSERT INTO ").append(cqlTable)
 		.append(" ( ").append(columnsBuilder).append(" ) ")
 		.append(" VALUES ( ").append(valuesBuilder).append(" ) ");
+		if (jdbcTimestampCol != null) {
+			builder.append(" USING TIMESTAMP " + rs.getTimestamp(jdbcTimestampCol).getTime());
+		}
 		
+		return builder.toString();
+	}
+	
+	public String getReadTimestampCQL() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SELECT ");
+		
+		for (JdbcColMapping mapping: colMapping) {
+			if (!mapping.isPK) {
+				
+				builder.append("writetime(");
+				builder.append(mapping.cqlName).append(")");
+			}
+		}
+				
+		builder.append(" FROM ").append(cqlTable).append(getIdPredicate());
 		return builder.toString();
 	}
 	
@@ -115,7 +140,7 @@ public class RowToCql {
 		this.keyspace = keyspace;
 	}
 
-	public SimpleStatement getStatement() throws SQLException {
+	public SimpleStatement getInsertStatement() throws SQLException {
 		
 		SimpleStatement ss = new SimpleStatement(getCQL(),values());
 		
