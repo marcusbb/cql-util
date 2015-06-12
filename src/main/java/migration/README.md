@@ -1,3 +1,16 @@
+# Request For Comments
+
+Currently the CQL Utils provide a blunt force instrument to copy data from an Oracle/MySQL or any other RDBMS source with a valid jdbc driver and pushing that data into Cassandra.
+Here is a non-exhaustive list of things that the tools should provide:
+
+- Fast
+- Configurable SQL Result query
+- Push to one or many Cassandra column families/keyspaces
+- Monitoring via JMX - how many jdbc records processed, how many cassandra rows inserted/updated
+- Manage-able - ability to pause the job for an arbitrary amount of time
+- Tunable Concurrency options
+- Ability to identify delta - update Cassandra rows that more stale than relational store
+- Split-able - Ability to split the job into multiple for high scale throughput
 
 Motivation:
 Move data from Relation databases (MySQL and Oracle) to Cassandra using the CQL driver.
