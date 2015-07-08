@@ -37,6 +37,7 @@ public class XMLConfig {
 	
 	boolean asyncWrites;
 	
+	//TODO: name this to batchWriteSize
 	int batchWrites;
 	
 	ConsistencyLevel consistencyLevel;
@@ -122,6 +123,7 @@ public class XMLConfig {
 
 	public void setKeyspace(String keyspace) {
 		this.keyspace = keyspace;
+		resetMap();
 	}
 
 	public boolean isAsyncWrites() {
@@ -197,12 +199,13 @@ public class XMLConfig {
 	}
 
 	private void resetMap() {
-		if (keyspace != null) {
+		
 			mapRsCqlConfig = new HashMap<>(rsToCqlConfigs.size());
 			for (RSToCqlConfig config:rsToCqlConfigs) {
-				mapRsCqlConfig.put(keyspace, config);
+				String ks = getKeyspace()==null? config.getKeyspace():keyspace;
+				mapRsCqlConfig.put(ks, config);
 			}
-		}
+		
 	}
 	
 	public Map<String, RSToCqlConfig> getMapRsCqlConfig() {
