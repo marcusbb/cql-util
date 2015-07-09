@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mapping>
+	
+	<sqlQuery><![CDATA[
+	select * from devices
+	]]></sqlQuery>
+	//-->
+	<cassConfig>
+		<contactHostsName>localhost</contactHostsName>
+		
+		<nativePort>9142</nativePort>
+		
+		
+	</cassConfig>
+	<forEach>
+		<rsToCqlConfig>
+			<keyspace>migration_ks</keyspace>
+			<cqlTable>devices</cqlTable>
+			<columns>
+				<column>
+					<jdbcName>pin</jdbcName>
+					<cqlName>pin</cqlName>
+					<isPK>true</isPK>
+					<type>TEXT</type>
+				</column>
+				<column>
+					<jdbcName>os</jdbcName>
+					<cqlName>os</cqlName>
+					<isPK>false</isPK>
+					<type>TEXT</type>
+				</column>
+			</columns>
+		</rsToCqlConfig>
+		
+	</forEach>
+</mapping>
