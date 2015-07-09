@@ -93,6 +93,7 @@ public class RowToCql {
 		return values.toArray();
 	}
 	
+	
 	//this is where the conversion magic happens
 	public Object getValue(JdbcColMapping mapping) throws SQLException {
 		
@@ -145,6 +146,17 @@ public class RowToCql {
 		SimpleStatement ss = new SimpleStatement(getCQL(),values());
 		
 		return ss;
+	}
+	public SimpleStatement getTsReadStatement() throws SQLException {
+		
+		List<Object> values = new ArrayList<>();
+		for (JdbcColMapping mapping: colMapping) {
+			if (mapping.isPK)
+				values.add(getValue(mapping));	
+		}
+		SimpleStatement ss =  new SimpleStatement(getReadTimestampCQL(),values.toArray());
+		return ss;
+		
 	}
 	
 }

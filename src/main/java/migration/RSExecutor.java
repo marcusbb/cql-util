@@ -65,6 +65,7 @@ public class RSExecutor implements RSExecutorMBean {
 	long requestCount;
 	long cqlRequestCount;
 	AtomicLong asyncResultsCount = new AtomicLong(0l);
+	long syncWrites = 0;
 	
 	public RSExecutor(XMLConfig config) throws ClassNotFoundException, SQLException{
 		this.config = config;
@@ -215,27 +216,27 @@ public class RSExecutor implements RSExecutorMBean {
 		cleanupCassandraResources();
 	}
 	
-	protected void performCassandraExecution(RowToCql row) throws SQLException{
+	protected boolean performCassandraExecution(RowToCql row) throws SQLException{
 		
 		final String keyspace = row.getKeyspace() != null?row.getKeyspace():config.getKeyspace();
-		
+		boolean performBatchWrites = (config.batchWrites > 1);
+		boolean writeToCassandra = !performBatchWrites;
 		com.datastax.driver.core.RegularStatement statement = row.getInsertStatement();
 		try{
-			boolean performBatchWrites = (config.batchWrites > 1);
-			boolean writeToCassandra = !performBatchWrites;
+			
 			int batchSize = 1;
 			
 			//Compare jdbcTimestamp column if required
 			if (config.getMapRsCqlConfig().get(keyspace).jdbcTimestampCol != null) {
 				//TODO, what is the consistency?
-				SimpleStatement ss =  new SimpleStatement(row.getReadTimestampCQL());
-				com.datastax.driver.core.ResultSet cqlTs = sessions.get(keyspace).execute(ss);
+				
+				com.datastax.driver.core.ResultSet cqlTs = sessions.get(keyspace).execute(row.getTsReadStatement());
 				Timestamp jdbcTs = rs.getTimestamp(config.getMapRsCqlConfig().get(keyspace).jdbcTimestampCol);
 				
 				Row tsrow = cqlTs.one();
 				if ( tsrow != null && jdbcTs.getTime() < tsrow.getLong(0)) {
 					logger.info("skipping row: " + row.getIdPredicate());
-					return;
+					return false;
 				}
 				
 			}
@@ -258,6 +259,7 @@ public class RSExecutor implements RSExecutorMBean {
 			logger.error("Exception writing to cassandra: " + e.getMessage() + "; keyspace: " + keyspace, e);
 			logFailedCql(keyspace, statement.getQueryString());
 		}
+		return writeToCassandra;
 	}
 
 	protected void writeToCassandra(final String keyspace, final com.datastax.driver.core.RegularStatement statement, final int batchSize){
@@ -289,6 +291,7 @@ public class RSExecutor implements RSExecutorMBean {
 			}, exec);
 		}else{
 			session.execute(statement);
+			syncWrites++;
 		}
 	}
 	
@@ -451,6 +454,10 @@ public class RSExecutor implements RSExecutorMBean {
 	@Override
 	public String getStateAsString() {
 		return getExecutorState().toString();
+	}
+
+	public long getSyncWriteCount() {
+		return syncWrites;
 	}
 	
 	

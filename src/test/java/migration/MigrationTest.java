@@ -62,6 +62,7 @@ public class MigrationTest extends MigrationBaseTest {
 		config.setJdbcUrl(jdbcUrl);
 		config.setJdbcDriver(jdbcDriver);
 		config.setBatchWrites(1);
+		config.setAsyncWrites(false);
 		
 		RSExecutor executor = new RSExecutor(config);
 		executor.execute();
@@ -70,6 +71,17 @@ public class MigrationTest extends MigrationBaseTest {
 		Session s = getSession(keyspaces[0]);
 		ResultSet rs = s.execute("select count(*) from devices");
 		assertEquals(100, rs.one().getLong(0));
+		
+		assertEquals(100,executor.getRequestCount());
+		assertEquals(100,executor.getSyncWriteCount());
+		
+		//async
+		config.setAsyncWrites(true);
+		config.setBatchWrites(10);
+		executor = new RSExecutor(config);
+		executor.execute();
+		assertEquals(100,executor.getAsyncResultsCount().get());
+		
 		
 		
 	}
@@ -152,4 +164,23 @@ public class MigrationTest extends MigrationBaseTest {
 		
 	}
 
+	@Test
+	public void readUpdateMigration() throws Exception {
+		prep("dev",10);
+		
+		XMLConfig config = (XMLConfig)JAXBUtil.unmarshalXmlFile("migration/device-mapping-jdbc-ts.xml", XMLConfig.class);
+		config.setJdbcUrl(jdbcUrl);
+		config.setJdbcDriver(jdbcDriver);
+		config.setBatchWrites(100);
+		
+		new RSExecutor(config).execute();
+		
+		//modify none and execute
+		RSExecutor again = new RSExecutor(config);
+		again.execute();
+		//again.asyncResultsCount
+		assertEquals(0,again.getSyncWriteCount());
+		
+		
+	}
 }
