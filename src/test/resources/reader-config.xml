@@ -14,7 +14,7 @@
 		<maxConnectionsPerLocalHost>10</maxConnectionsPerLocalHost>
 		<maxConnectionsPerRemoteHost>10</maxConnectionsPerRemoteHost>
 		<maxReconnectDelay>600000</maxReconnectDelay>
-		<nativePort>9142</nativePort>
+		<nativePort>9042</nativePort>
 		<readTimeoutMs>120000</readTimeoutMs>
 		<soLinger>5000</soLinger>
 		<tcpNoDelay>false</tcpNoDelay>
