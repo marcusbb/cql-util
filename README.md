@@ -20,21 +20,21 @@ mvn test -f pom_guava.xml
 ### Features
 Currently this is broken into 3 distinct projects
 
-1. [Entity mapping for the java driver]
+* [Entity mapping for the java driver]
 (master/src/main/java/driver/em/)
 Main motivation is to reduce boilerplate code to map data structure classes (beans) with CQL.
 You are likely to be able to use the DataStax mapping features out of the box, although this comes with some handy features like prepared statement caching and batch statement support.  As well as mapping to Maps, as this was seen as a good candidate to provide some EM.
 
 Soon to add: Enabled participation in an XA (JTA) transaction.
 
-2. [JDBC to Cassandra migration tool]
+* [JDBC to Cassandra migration tool]
 (master/src/main/java/migration/)
 A configuration driven mechanism for moving data from MySQL/Oracle (or any jdbc interface) to Cassandra.
 
 As with the all rows reader (below), you are likely to want to leverage Spark for this type of activity, although this provides a completely descriptive approach (XML).
 
 
-3. [All rows reader]
+* [All rows reader]
 (master/src/main/java/reader/)
 Paginated loading of all rows, with configurable tokens, and columns to query.
 3a. [Distributed all rows reader]
