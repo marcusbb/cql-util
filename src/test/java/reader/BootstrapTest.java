@@ -2,12 +2,16 @@ package reader;
 
 import static org.junit.Assert.*;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
+import driver.em.TestBase;
 import reader.samples.RowCountJob;
 
-public class BootstrapTest {
+@Ignore
+public class BootstrapTest extends TestBase{
 
+	
 	@Test
 	public void singlethreaded() {
 		System.setProperty("config", "perf-reader-config.xml");
