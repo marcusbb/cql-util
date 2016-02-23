@@ -23,9 +23,10 @@ Currently this is broken into 3 distinct projects
 * [Entity mapping for the java driver]
 (master/src/main/java/driver/em/)
 Main motivation is to reduce boilerplate code to map data structure classes (beans) with CQL.
-You are likely to be able to use the DataStax mapping features out of the box, although this comes with some handy features like prepared statement caching and batch statement support.  As well as mapping to Maps, as this was seen as a good candidate to provide some EM.
+You are likely to be able to use the DataStax mapping features out of the box, although this comes with some handy features like prepared statement caching and batch statement support.  As well as mapping to Maps, as this was a requirement for my previous project.
 
-Soon to add: Enabled participation in an XA (JTA) transaction.
+Feature Request: Enabled participation in an XA (JTA) transaction - The current naive approach is not to implement a 2 phase commit resource.  Since cassandra itself can not provide even atomicity of transactions it's not a reasonable expectation that clients can be atomic.  But it is reasonable is to provide a means by which statements can be batched and then flushed on XA commit.
+Caveat:  It could mask underlying issues - most importantly partial failure which clients which this implementation would just hide.  On the other hand relying on the retry mechanism of the underlying driver can at least mitigate - and provide best effort eventually consistent model.  Underlying runtime exceptions however will not be handled gracefully but will be thrown back up to the client.
 
 * [JDBC to Cassandra migration tool]
 (master/src/main/java/migration/)
